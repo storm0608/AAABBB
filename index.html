@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>반도체 정밀 공정 스톱워치 & 퀴즈</title>
+    <!-- Tailwind CSS 로드 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* 외부 폰트 의존성을 줄인 고가독성 디지털 & 한글 시스템 폰트 스택 */
+        body {
+            font-family: 'Pretendard', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+            background-color: #060b19;
+            color: #e2e8f0;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        .font-digital {
+            font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.03em;
+        }
+
+        /* 반도체 웨이퍼 회로 배경 패턴 */
+        .wafer-bg {
+            background-color: #060b19;
+            background-image: 
+                radial-gradient(circle at 50% 30%, rgba(6, 182, 212, 0.12) 0%, transparent 60%),
+                linear-gradient(rgba(14, 165, 233, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(14, 165, 233, 0.05) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+        }
+
+        /* 네온 글로우 효과 */
+        .neon-cyan {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.4), inset 0 0 10px rgba(6, 182, 212, 0.2);
+        }
+        .neon-gold {
+            box-shadow: 0 0 20px rgba(250, 204, 21, 0.5), inset 0 0 10px rgba(250, 204, 21, 0.2);
+        }
+        .neon-text-cyan {
+            text-shadow: 0 0 12px rgba(34, 211, 238, 0.8);
+        }
+        .neon-text-gold {
+            text-shadow: 0 0 15px rgba(250, 204, 21, 0.8);
+        }
+
+        /* 스톱워치 진행 링 애니메이션 */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.98); opacity: 0.7; }
+            50% { transform: scale(1.02); opacity: 1; }
+            100% { transform: scale(0.98); opacity: 0.7; }
+        }
+        .running-pulse {
+            animation: pulse-ring 1s infinite ease-in-out;
+        }
+
+        /* 블라인드(가림막) 패턴 */
+        .blind-curtain {
+            background: repeating-linear-gradient(
+                45deg,
+                #0f172a,
+                #0f172a 15px,
+                #1e293b 15px,
+                #1e293b 30px
+            );
+        }
+
+        /* 스크롤바 커스텀 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #0284c7;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="wafer-bg min-h-screen flex flex-col justify-between">
+
+    <!-- 상단 헤더: 타이틀 및 교사 제어 도구 -->
+    <header class="w-full bg-slate-900/90 border-b border-cyan-500/30 px-4 py-3 sm:px-8 flex flex-wrap items-center justify-between gap-3 backdrop-blur-md sticky top-0 z-30">
+        <div class="flex items-center gap-3">
+            <!-- 반도체 칩 SVG 아이콘 -->
+            <div class="w-10 h-10 rounded-xl bg-cyan-950 border border-cyan-400 flex items-center justify-center neon-cyan">
+                <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-lg sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
+                    <span class="text-cyan-400">SEMICONDUCTOR</span> 정밀 공정 챌린지
+                </h1>
+                <p class="text-xs text-slate-400 hidden sm:block">중학교 기술·가정 | 0.01초의 나노 공정 정밀도와 반도체 원리 마스터하기</p>
+            </div>
+        </div>
+
+        <!-- 교사 편의 기능 버튼 모음 -->
+        <div class="flex items-center gap-2 sm:gap-3">
+            <!-- 목표 시간 선택 -->
+            <div class="flex items-center bg-slate-800 rounded-xl p-1 border border-slate-700">
+                <span class="text-xs font-bold text-slate-400 px-2 hidden md:inline">목표시간:</span>
+                <select id="target-time-select" onchange="changeTargetSetting()" class="bg-slate-900 text-cyan-300 font-bold text-sm rounded-lg px-2.5 py-1.5 outline-none border border-cyan-500/40 cursor-pointer">
+                    <option value="3.00">3.00초</option>
+                    <option value="5.00" selected>5.00초</option>
+                    <option value="7.00">7.00초</option>
+                    <option value="10.00">10.00초</option>
+                    <option value="random">랜덤 (3~8초)</option>
+                </select>
+            </div>
+
+            <!-- 블라인드(타이머 숨김) 모드 토글 -->
+            <button id="blind-mode-btn" onclick="toggleBlindMode()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:border-amber-400 transition cursor-pointer" title="시작 2초 후 숫자가 가려집니다">
+                <span id="blind-icon">👁️</span>
+                <span class="hidden sm:inline">숨김모드:</span>
+                <span id="blind-status" class="text-slate-400">OFF</span>
+            </button>
+
+            <!-- 문제 편집 모달 열기 -->
+            <button onclick="openQuestionManager()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/40 transition cursor-pointer">
+                <span>📝</span>
+                <span class="hidden sm:inline">문제 관리</span>
+            </button>
+
+            <!-- 효과음 음소거 토글 -->
+            <button id="sound-btn" onclick="toggleSound()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 transition cursor-pointer" title="효과음 켜기/끄기">
+                🔊
+            </button>
+        </div>
+    </header>
+
+    <!-- 메인 컨텐츠 영역: 좌측(게임 스테이지) + 우측(모둠 점수판) -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- 좌측: 메인 공정 스톱워치 스테이지 (8칸) -->
+        <section class="lg:col-span-8 bg-slate-900/80 border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-sm flex flex-col items-center relative overflow-hidden">
+            
+            <!-- 현재 도전 모둠 표시 배너 -->
+            <div class="w-full flex flex-wrap items-center justify-between gap-2 mb-6 pb-4 border-b border-slate-800">
+                <div class="flex items-center gap-2">
+                    <span class="px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-bold border border-cyan-500/40">STEP 1. 정밀 노광 타이밍</span>
+                    <span id="blind-badge" class="hidden px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold border border-amber-500/40 animate-pulse">🙈 2초 후 화면 가림 작동중</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm text-slate-400">현재 도전 팀:</span>
+                    <span id="active-team-badge" class="px-4 py-1 rounded-xl bg-amber-400 text-slate-950 font-black text-base shadow-lg">1모둠</span>
+                </div>
+            </div>
+
+            <!-- 목표 시간 전광판 -->
+            <div class="text-center mb-4">
+                <p class="text-sm sm:text-base font-bold text-cyan-400 tracking-widest uppercase mb-1">TARGET PROCESS TIME (목표 공정 시간)</p>
+                <div class="inline-flex items-baseline gap-2 bg-slate-950/90 px-6 py-2 rounded-2xl border border-cyan-500/40">
+                    <span id="target-time-display" class="font-digital text-4xl sm:text-5xl font-black text-amber-400 neon-text-gold">05.00</span>
+                    <span class="text-lg font-bold text-slate-400">초</span>
+                </div>
+            </div>
+
+            <!-- 메인 스톱워치 계기판 -->
+            <div id="timer-box" class="w-full max-w-xl my-4 bg-slate-950 border-2 border-cyan-500/50 rounded-3xl p-6 sm:p-10 text-center relative neon-cyan transition-all">
+                <!-- 블라인드 모드 시 덮이는 가림막 -->
+                <div id="blind-overlay" class="hidden absolute inset-0 blind-curtain rounded-3xl flex flex-col items-center justify-center z-10 border-2 border-amber-400">
+                    <span class="text-4xl mb-2">🙈</span>
+                    <p class="text-xl sm:text-2xl font-black text-amber-400 tracking-wider">감각으로 정지하세요!</p>
+                    <p class="text-xs sm:text-sm text-slate-300 mt-1">나노 공정 센서 차단됨 (블라인드 모드)</p>
+                </div>
+
+                <div class="text-xs font-bold text-slate-500 tracking-widest mb-2">ELAPSED TIME (현재 경과 시간)</div>
+                <div id="stopwatch-display" class="font-digital text-6xl sm:text-8xl font-black text-cyan-300 neon-text-cyan tracking-tight">
+                    00.00
+                </div>
+                <div id="status-message" class="mt-3 text-sm sm:text-base font-bold text-slate-400 h-6">
+                    도전할 모둠을 선택하고 [공정 시작]을 누르세요!
+                </div>
+            </div>
+
+            <!-- 컨트롤 버튼 (스페이스바 단축키 지원) -->
+            <div class="w-full max-w-xl mt-4 flex flex-col sm:flex-row gap-4">
+                <button id="main-action-btn" onclick="handleMainAction()" class="flex-1 py-5 px-8 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-2xl sm:text-3xl shadow-lg shadow-cyan-500/30 active:scale-95 transition cursor-pointer flex items-center justify-center gap-3">
+                    <span id="btn-icon">▶</span>
+                    <span id="btn-text">공정 시작 (SPACE)</span>
+                </button>
+                <button id="reset-timer-btn" onclick="resetCurrentRound()" class="py-5 px-6 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-lg border border-slate-700 active:scale-95 transition cursor-pointer" title="현재 라운드 초기화">
+                    🔄 초기화
+                </button>
+            </div>
+
+            <!-- 점수 산출 및 난이도 결정 기준 안내 바 -->
+            <div class="w-full mt-8 pt-4 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-3 gap-2 text-center text-xs sm:text-sm">
+                <div class="bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-500/40">
+                    <span class="block text-emerald-400 font-black">🟢 오차 0.50초 이하</span>
+                    <span class="text-slate-300">난이도 <strong>하</strong> 출제 (+100점)</span>
+                </div>
+                <div class="bg-amber-950/40 p-2.5 rounded-xl border border-amber-500/40">
+                    <span class="block text-amber-400 font-black">🟡 오차 0.51 ~ 1.00초</span>
+                    <span class="text-slate-300">난이도 <strong>중</strong> 출제 (+120점)</span>
+                </div>
+                <div class="bg-rose-950/40 p-2.5 rounded-xl border border-rose-500/40">
+                    <span class="block text-rose-400 font-black">🔴 오차 1.00초 초과</span>
+                    <span class="text-slate-300">난이도 <strong>상</strong> 역전찬스 (+150점)</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 우측: 모둠별 점수판 / 리더보드 (4칸) -->
+        <aside class="lg:col-span-4 bg-slate-900/80 border border-cyan-500/30 rounded-3xl p-6 shadow-2xl backdrop-blur-sm">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+                <h2 class="text-lg font-black text-white flex items-center gap-2">
+                    <span class="text-amber-400">🏆</span> 모둠별 공정 점수판
+                </h2>
+                <div class="flex items-center gap-1.5">
+                    <button onclick="addTeam()" class="px-2.5 py-1 rounded-lg bg-cyan-950 hover:bg-cyan-900 text-cyan-300 text-xs font-bold border border-cyan-500/40 cursor-pointer" title="모둠 추가">+ 모둠</button>
+                    <button onclick="resetAllScores()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-300 text-xs font-bold border border-slate-700 cursor-pointer" title="점수 초기화">리셋</button>
+                </div>
+            </div>
+
+            <p class="text-xs text-slate-400 mb-3">👇 도전할 모둠을 클릭해서 선택하세요 (이름 클릭 시 수정 가능)</p>
+
+            <!-- 모둠 리스트 컨테이너 -->
+            <div id="team-list" class="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
+                <!-- JS로 동적 렌더링 -->
+            </div>
+
+            <!-- 남은 문제 수 표시 (난이도별 현황) -->
+            <div class="mt-5 pt-4 border-t border-slate-800 space-y-1.5 text-xs">
+                <div class="flex items-center justify-between text-slate-400">
+                    <span>난이도별 남은 미출제 퀴즈:</span>
+                    <span id="remaining-q-count" class="font-bold text-cyan-400">총 18문제</span>
+                </div>
+                <div id="remaining-diff-breakdown" class="grid grid-cols-3 gap-1.5 text-center font-bold">
+                    <span class="py-1 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-500/30">하: 6</span>
+                    <span class="py-1 rounded bg-amber-950/60 text-amber-300 border border-amber-500/30">중: 6</span>
+                    <span class="py-1 rounded bg-rose-950/60 text-rose-300 border border-rose-500/30">상: 6</span>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- ===================================================================== -->
+    <!-- 모달 1: [2단계] 반도체 공정 퀴즈 및 최종 점수 정산 팝업 -->
+    <!-- ===================================================================== -->
+    <div id="quiz-modal" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div id="quiz-modal-card" class="bg-slate-900 border-2 border-cyan-400 rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl neon-cyan my-auto transition-all">
+            
+            <!-- 상단 스톱워치 결과 및 결정된 난이도 요약 바 -->
+            <div class="bg-slate-950 rounded-2xl p-4 mb-6 border border-slate-800 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <span class="text-xs font-bold text-cyan-400 block">STEP 1. 스톱워치 정밀도 측정 결과</span>
+                    <div class="flex flex-wrap items-baseline gap-3 mt-1">
+                        <span class="text-sm text-slate-400">목표: <strong id="res-target-time" class="text-slate-200 font-digital text-lg">05.00초</strong></span>
+                        <span class="text-sm text-slate-400">기록: <strong id="res-recorded-time" class="text-white font-digital text-xl">05.02초</strong></span>
+                        <span class="text-sm text-slate-400">오차: <strong id="res-signed-diff" class="text-amber-400 font-digital text-xl">+0.02초</strong></span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span id="res-precision-badge" class="inline-block px-3 py-1 rounded-full text-xs font-black bg-cyan-500/20 text-cyan-300 mb-1">초정밀 공정 달성!</span>
+                    <div class="text-lg font-black text-white">타이밍 점수: <span id="res-time-score" class="text-amber-400 font-digital text-2xl">+98</span>점</div>
+                </div>
+            </div>
+
+            <!-- STEP 2 퀴즈 영역 -->
+            <div>
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                    <div class="flex items-center gap-2">
+                        <span id="quiz-difficulty-badge" class="px-3.5 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs sm:text-sm font-black border border-emerald-400/50">
+                            🟢 난이도 하 - 정밀 공정 성공! 기본 문제 (+100점)
+                        </span>
+                    </div>
+                    <span id="quiz-category" class="text-xs font-bold text-slate-400">단원: 반도체의 기초</span>
+                </div>
+
+                <!-- 문제 질문 -->
+                <h3 id="quiz-question" class="text-xl sm:text-2xl font-black text-white leading-snug mb-6">
+                    문제 내용이 여기에 표시됩니다.
+                </h3>
+
+                <!-- 객관식 4지선다 버튼 -->
+                <div id="quiz-options" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                    <!-- JS로 동적 생성 -->
+                </div>
+
+                <!-- 정답 선택 후 나타나는 핵심 해설 및 점수 반영 영역 -->
+                <div id="quiz-feedback-box" class="hidden rounded-2xl p-5 border mb-6 transition-all">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 id="feedback-title" class="text-lg sm:text-xl font-black">정답입니다! (+100점)</h4>
+                        <span id="total-round-score" class="px-3 py-1 rounded-xl bg-slate-950 font-black text-amber-400 text-base">총 획득: +198점</span>
+                    </div>
+                    <p id="feedback-explanation" class="text-sm sm:text-base text-slate-200 leading-relaxed">
+                        해설 내용이 여기에 표시됩니다.
+                    </p>
+                </div>
+
+                <!-- 다음 라운드 진행 버튼 -->
+                <div id="quiz-footer" class="hidden flex justify-end">
+                    <button onclick="finishRoundAndCloseModal()" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-black text-lg shadow-lg cursor-pointer transition">
+                        점수 반영 및 다음 모둠 준비 ➔
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 모달 2: 교사용 문제 확인 및 수정/추가 모달 -->
+    <!-- ===================================================================== -->
+    <div id="manager-modal" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-cyan-500/50 rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col p-6 shadow-2xl">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+                <div>
+                    <h3 class="text-xl font-black text-white">📝 교사용 반도체 퀴즈 은행 관리</h3>
+                    <p class="text-xs text-slate-400">중학교 기술·가정 교육과정에 맞춘 문제를 확인하거나 새 문제를 추가할 수 있습니다.</p>
+                </div>
+                <button onclick="closeQuestionManager()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold cursor-pointer">✕ 닫기</button>
+            </div>
+
+            <!-- 새 문제 추가 폼 -->
+            <div class="my-4 bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
+                <h4 class="text-sm font-bold text-cyan-400 mb-3">+ 새 반도체 문제 직접 추가하기</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    <div class="sm:col-span-2 flex flex-col sm:flex-row gap-2">
+                        <select id="new-q-difficulty" class="bg-slate-900 border border-cyan-500/50 rounded-xl px-3 py-2 text-cyan-300 font-bold outline-none shrink-0">
+                            <option value="easy">🟢 난이도: 하 (기본 +100점)</option>
+                            <option value="medium">🟡 난이도: 중 (응용 +120점)</option>
+                            <option value="hard">🔴 난이도: 상 (심화 +150점)</option>
+                        </select>
+                        <input id="new-q-text" type="text" placeholder="질문을 입력하세요 (예: N형 반도체를 만들 때 첨가하는 원소는?)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-cyan-400">
+                    </div>
+                    <input id="new-q-opt0" type="text" placeholder="보기 1번" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-cyan-400">
+                    <input id="new-q-opt1" type="text" placeholder="보기 2번" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-cyan-400">
+                    <input id="new-q-opt2" type="text" placeholder="보기 3번" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-cyan-400">
+                    <input id="new-q-opt3" type="text" placeholder="보기 4번" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-cyan-400">
+                    <select id="new-q-answer" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-amber-400 font-bold outline-none">
+                        <option value="0">정답: 1번 보기</option>
+                        <option value="1">정답: 2번 보기</option>
+                        <option value="2">정답: 3번 보기</option>
+                        <option value="3">정답: 4번 보기</option>
+                    </select>
+                    <input id="new-q-exp" type="text" placeholder="핵심 해설 입력" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-cyan-400">
+                </div>
+                <div class="mt-3 flex justify-end">
+                    <button onclick="addNewQuestion()" class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-sm cursor-pointer">문제 목록에 추가</button>
+                </div>
+            </div>
+
+            <!-- 난이도별 필터 탭 -->
+            <div class="flex items-center gap-2 mb-3 text-xs font-bold">
+                <span class="text-slate-400">난이도 필터:</span>
+                <button onclick="setManagerFilter('all')" id="filter-btn-all" class="px-3 py-1.5 rounded-lg bg-cyan-500 text-slate-950 cursor-pointer">전체 보기</button>
+                <button onclick="setManagerFilter('easy')" id="filter-btn-easy" class="px-3 py-1.5 rounded-lg bg-slate-800 text-emerald-300 hover:bg-slate-700 cursor-pointer">🟢 난이도 하</button>
+                <button onclick="setManagerFilter('medium')" id="filter-btn-medium" class="px-3 py-1.5 rounded-lg bg-slate-800 text-amber-300 hover:bg-slate-700 cursor-pointer">🟡 난이도 중</button>
+                <button onclick="setManagerFilter('hard')" id="filter-btn-hard" class="px-3 py-1.5 rounded-lg bg-slate-800 text-rose-300 hover:bg-slate-700 cursor-pointer">🔴 난이도 상</button>
+            </div>
+
+            <!-- 기존 문제 목록 리스트 -->
+            <div class="flex-1 overflow-y-auto space-y-2 pr-1" id="manager-q-list">
+                <!-- JS 렌더링 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 커스텀 토스트 메시지 (alert 대체용) -->
+    <div id="toast-msg" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 border border-cyan-400 text-white px-6 py-3 rounded-2xl shadow-2xl font-bold text-sm z-50 transition-all">
+        알림 메시지
+    </div>
+
+    <script>
+        /**
+         * ====================================================================
+         * 1. 중학교 기술·가정 수준 반도체 핵심 퀴즈 데이터베이스 (난이도 하/중/상 총 18문제)
+         * ====================================================================
+         */
+        let questionsDB = [
+            // -------------------- [난이도: 하 (easy) - 6문제] --------------------
+            {
+                id: 101,
+                difficulty: "easy",
+                category: "반도체의 정의와 특징",
+                question: "평소에는 전기가 잘 통하지 않는 부도체이지만, 빛·열·불순물 등 특정 조건이 주어지면 전기가 통하는 물질은 무엇인가요?",
+                options: ["초전도체", "반도체", "절연체", "합금"],
+                answer: 1,
+                explanation: "반도체(Semiconductor)는 도체와 부도체의 중간 성질을 가지며, 조건에 따라 전기 전도도를 조절할 수 있어 현대 전자기기의 핵심 부품으로 쓰입니다."
+            },
+            {
+                id: 102,
+                difficulty: "easy",
+                category: "반도체의 주요 원소",
+                question: "모래(석영)에서 추출하며, 지구상에 풍부하고 안정적이어서 반도체 웨이퍼의 주원료로 가장 많이 사용되는 원소는?",
+                options: ["구리(Cu)", "규소(실리콘, Si)", "알루미늄(Al)", "우라늄(U)"],
+                answer: 1,
+                explanation: "규소(실리콘, Si)는 매장량이 풍부하고 절연막(산화막) 형성이 쉬워 반도체 웨이퍼 제조의 핵심 원료로 가장 널리 쓰입니다."
+            },
+            {
+                id: 103,
+                difficulty: "easy",
+                category: "발광 다이오드(LED)",
+                question: "전류가 흐를 때 빛을 내는 반도체 소자로, 소비 전력이 적고 수명이 길어 스마트폰 화면이나 조명에 널리 쓰이는 부품은?",
+                options: ["LED (발광 다이오드)", "진공관", "변압기", "릴레이"],
+                answer: 0,
+                explanation: "LED(Light Emitting Diode)는 전기에너지를 빛에너지로 직접 변환하는 반도체 소자로 효율이 매우 높습니다."
+            },
+            {
+                id: 104,
+                difficulty: "easy",
+                category: "생활 속 반도체 활용",
+                question: "다음 중 반도체 칩이 핵심 부품으로 들어가지 않는 단순 도구는 무엇인가요?",
+                options: ["스마트폰", "자율주행 자동차", "나무 연필", "인공지능 스피커"],
+                answer: 2,
+                explanation: "스마트폰, 자율주행차, AI 스피커 등 모든 현대 디지털 전자기기에는 연산과 저장을 위한 반도체가 필수적으로 탑재됩니다."
+            },
+            {
+                id: 105,
+                difficulty: "easy",
+                category: "N형·P형 반도체의 기초",
+                question: "순수한 반도체에 불순물을 넣어 전기가 잘 통하도록 만들 때, 음(-)전하를 띠는 자유 전자가 많아진 반도체는 무엇인가요?",
+                options: ["N형 반도체", "P형 반도체", "절연 반도체", "초전도 반도체"],
+                answer: 0,
+                explanation: "N형 반도체(Negative)는 음(-)전하를 띠는 자유 전자가 주로 전류를 운반하는 반도체입니다."
+            },
+            {
+                id: 106,
+                difficulty: "easy",
+                category: "클린룸과 정전기 방지",
+                question: "반도체 공장에서 작업자들이 방진복을 입고 정전기 방지 장갑을 착용하는 가장 큰 이유는 무엇인가요?",
+                options: ["공장 내부가 너무 추워서", "미세 먼지와 정전기가 초미세 회로를 망가뜨리기 때문", "작업복 디자인을 통일하기 위해", "방사선을 차단하기 위해"],
+                answer: 1,
+                explanation: "머리카락 굵기의 수만 분의 1 크기인 나노 회로에는 작은 먼지나 정전기 스파크만 닿아도 치명적인 불량이 발생합니다."
+            },
+
+            // -------------------- [난이도: 중 (medium) - 6문제] --------------------
+            {
+                id: 201,
+                difficulty: "medium",
+                category: "불순물 첨가(도핑) 원리",
+                question: "원자가 전자가 4개인 순수 규소(Si)에 원자가 전자가 5개인 인(P)이나 비소(As)를 첨가(도핑)하면 어떤 변화가 일어나나요?",
+                options: ["전자가 부족해져 양공이 생긴다", "남는 자유 전자가 생겨 N형 반도체가 된다", "전기가 전혀 통하지 않는 부도체가 된다", "자석의 성질을 띠게 된다"],
+                answer: 1,
+                explanation: "규소(4개)와 인(5개)이 공유 결합을 하면 전자 1개가 남아 자유롭게 움직이는 자유 전자가 되어 N형 반도체가 만들어집니다."
+            },
+            {
+                id: 202,
+                difficulty: "medium",
+                category: "P형 반도체와 양공",
+                question: "순수한 규소(Si)에 원자가 전자가 3개인 붕소(B)를 첨가했을 때 생기는 전자가 부족한 빈자리로, 양(+)전하처럼 행동하는 입자는?",
+                options: ["양공 (Hole)", "중성자", "광자", "자유 전자"],
+                answer: 0,
+                explanation: "붕소(3개)를 첨가하면 전자 1개가 부족한 빈자리인 '양공(Hole)'이 생성되며, 양공이 이동하면서 전류를 흐르게 하는 P형 반도체가 됩니다."
+            },
+            {
+                id: 203,
+                difficulty: "medium",
+                category: "다이오드의 정류 작용",
+                question: "P형 반도체와 N형 반도체를 접합해 만들며, 전류를 한쪽 방향으로만 흐르게 하여 교류(AC)를 직류(DC)로 바꾸는 부품은?",
+                options: ["트랜지스터", "다이오드", "저항기", "코일"],
+                answer: 1,
+                explanation: "다이오드(Diode)는 순방향일 때만 전류를 통과시키는 '정류 작용'을 하므로 스마트폰 충전기 어댑터 등에 필수적으로 쓰입니다."
+            },
+            {
+                id: 204,
+                difficulty: "medium",
+                category: "트랜지스터의 핵심 기능",
+                question: "반도체 3개를 접합(PNP 또는 NPN)하여 만들며, 약한 전기 신호를 크게 키우는 '증폭 작용'과 전류를 켜고 끄는 '스위칭 작용'을 하는 소자는?",
+                options: ["다이오드", "트랜지스터", "퓨즈", "콘덴서"],
+                answer: 1,
+                explanation: "트랜지스터(Transistor)는 디지털 컴퓨터에서 0과 1을 처리하는 초소형 고속 스위치 및 신호 증폭기 역할을 수행합니다."
+            },
+            {
+                id: 205,
+                difficulty: "medium",
+                category: "웨이퍼(Wafer) 제조",
+                question: "반도체 제조 공정에서 고순도 실리콘 기둥(잉곳)을 얇고 둥근 원판 모양으로 잘라낸 반도체 회로의 바탕이 되는 기판은?",
+                options: ["웨이퍼 (Wafer)", "포토마스크", "리드프레임", "솔더볼"],
+                answer: 0,
+                explanation: "웨이퍼(Wafer)는 여러 개의 반도체 칩을 동시에 만들어내기 위한 얇고 매끄러운 원판형 실리콘 기판입니다."
+            },
+            {
+                id: 206,
+                difficulty: "medium",
+                category: "집적 회로(IC)의 장점",
+                question: "수억 개 이상의 트랜지스터와 다이오드 등을 손톱만 한 실리콘 칩 하나에 고밀도로 모아 놓은 집적 회로(IC)의 장점이 아닌 것은?",
+                options: ["전자기기의 크기가 작고 가벼워진다", "신호 이동 거리가 짧아 연산 속도가 빨라진다", "소비 전력이 줄어든다", "회로가 고장 나면 부품 하나씩 떼어내 수리하기 쉽다"],
+                answer: 3,
+                explanation: "집적 회로(IC)는 초소형·고속·저전력 장점이 뛰어나지만, 하나의 칩에 일체형으로 새겨져 있어 내부 개별 소자만 분리해 수리할 수는 없습니다."
+            },
+
+            // -------------------- [난이도: 상 (hard) - 6문제] --------------------
+            {
+                id: 301,
+                difficulty: "hard",
+                category: "반도체 8대 공정 - 포토(노광)",
+                question: "웨이퍼 위에 빛에 반응하는 감광액(PR)을 바른 뒤, 회로 설계도가 그려진 마스크에 자외선(EUV 등)을 통과시켜 회로 패턴을 찍어내는 공정은?",
+                options: ["포토 리소그래피 (노광) 공정", "패키징 (Packaging) 공정", "금속 배선 공정", "단결정 잉곳 성장 공정"],
+                answer: 0,
+                explanation: "포토 공정(Photo Lithography)은 사진 인화 원리를 이용해 나노미터 단위의 미세한 회로 설계도를 웨이퍼 위에 전사하는 핵심 공정입니다."
+            },
+            {
+                id: 302,
+                difficulty: "hard",
+                category: "반도체 8대 공정 - 식각(Etching)",
+                question: "포토 공정 후 회로 패턴이 그려진 웨이퍼에서 불필요한 부분을 화학 약품(습식)이나 플라즈마 가스(건식)로 깎아내어 회로만 남기는 공정은?",
+                options: ["산화 (Oxidation) 공정", "식각 (Etching) 공정", "증착 (Deposition) 공정", "EDS 테스트 공정"],
+                answer: 1,
+                explanation: "식각(Etching) 공정은 판화를 파내듯 불필요한 막질을 정밀하게 제거하여 웨이퍼 표면에 입체적인 회로 구조를 형성하는 공정입니다."
+            },
+            {
+                id: 303,
+                difficulty: "hard",
+                category: "반도체 8대 공정 - 증착 및 이온주입",
+                question: "웨이퍼 위에 1마이크로미터 이하의 얇은 막(박막)을 입혀 전기적 특성을 갖게 하거나 층간을 분리하는 공정은 무엇인가요?",
+                options: ["증착 (Deposition) 공정", "웨이퍼 절단 (Sawing) 공정", "마킹 공정", "몰딩 공정"],
+                answer: 0,
+                explanation: "증착(Deposition) 공정은 화학 기상 증착(CVD) 등의 방법으로 웨이퍼 위에 아주 얇은 절연막이나 전도성 박막을 겹겹이 쌓는 과정입니다."
+            },
+            {
+                id: 304,
+                difficulty: "hard",
+                category: "PN 접합 다이오드 바이어스 원리",
+                question: "PN 접합 다이오드에서 P형에 전원(+)극을, N형에 전원(-)극을 연결하는 '순방향 바이어스'를 걸었을 때 일어나는 현상은?",
+                options: ["공핍층이 넓어져 전류가 차단된다", "전자와 양공이 접합면으로 이동해 공핍층이 좁아지며 전류가 흐른다", "다이오드 내부의 규소가 녹아내린다", "전류가 N형에서 P형 방향으로만 역류한다"],
+                answer: 1,
+                explanation: "순방향 전압을 걸면 P형의 양공과 N형의 자유 전자가 서로 접합면 쪽으로 밀려나면서 장벽(공핍층)이 좁아져 전류가 원활하게 흐릅니다."
+            },
+            {
+                id: 305,
+                difficulty: "hard",
+                category: "메모리 vs 시스템 반도체",
+                question: "정보 저장이 목적인 메모리 반도체(DRAM, 낸드플래시)와 달리, 데이터의 연산·제어·논리 처리를 담당하는 CPU, AP, NPU 등은 무엇에 속하나요?",
+                options: ["시스템 반도체 (비메모리 반도체)", "수동 소자 반도체", "단순 정류 다이오드", "진성 반도체"],
+                answer: 0,
+                explanation: "시스템 반도체(비메모리)는 인간의 두뇌처럼 연산과 제어를 수행하며, 다품종 소량 생산과 고도의 설계 기술력이 요구됩니다."
+            },
+            {
+                id: 306,
+                difficulty: "hard",
+                category: "휘발성 vs 비휘발성 메모리",
+                question: "전원이 꺼지면 저장된 데이터가 사라지지만 속도가 매우 빠른 'DRAM'과 달리, 전원이 꺼져도 데이터가 유지되어 SSD나 USB에 쓰이는 반도체는?",
+                options: ["낸드플래시 메모리 (NAND Flash)", "SRAM", "캐시 메모리", "레지스터"],
+                answer: 0,
+                explanation: "낸드플래시(NAND Flash)는 전원이 차단되어도 전자가 플로팅 게이트에 갇혀 데이터가 보존되는 대표적인 비휘발성 메모리 반도체입니다."
+            }
+        ];
+
+        // 출제된 문제 ID 기록 (난이도별 중복 출제 방지용)
+        let usedQuestionIds = [];
+        let currentManagerFilter = 'all';
+
+        /**
+         * ====================================================================
+         * 2. 게임 상태 변수 및 모둠 데이터 초기화
+         * ====================================================================
+         */
+    // 현재 라운드 정산용 임시 점수 및 난이도 정보
+    let currentRoundTimeScore = 0;
+    let currentRoundQuizScore = 0;
+    let currentRoundDifficulty = "easy"; // 'easy' | 'medium' | 'hard'
+    let currentRoundQuizReward = 100;
+    let currentQuestion = null;
+    let quizAnswered = false;
+
+    // 효과음 상태 (Web Audio API)
+    let soundEnabled = true;
+    let audioCtx = null;
+
+    /**
+     * ====================================================================
+     * 3. Web Audio API 효과음 생성기 (외부 파일 없이 깔끔한 전자음 구현)
+     * ====================================================================
+     */
+    function playSound(type) {
+        if (!soundEnabled) return;
+        try {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'start') {
+                // 경쾌한 시작 비프음
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.12); // A5
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'stop-easy') {
+                // 난이도 하(성공): 맑고 경쾌한 2단 상승음
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(659.25, now); // E5
+                osc.frequency.setValueAtTime(880, now + 0.08); // A5
+                gain.gain.setValueAtTime(0.28, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+                osc.start(now);
+                osc.stop(now + 0.22);
+            } else if (type === 'stop-medium') {
+                // 난이도 중(주의): 중간 톤 알림음
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(493.88, now + 0.09); // B4
+                gain.gain.setValueAtTime(0.28, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+                osc.start(now);
+                osc.stop(now + 0.22);
+            } else if (type === 'stop-hard') {
+                // 난이도 상(경고/역전찬스): 긴장감 있는 하강 경보음
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(392.00, now); // G4
+                osc.frequency.linearRampToValueAtTime(261.63, now + 0.25); // C4
+                gain.gain.setValueAtTime(0.22, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
+                osc.start(now);
+                osc.stop(now + 0.28);
+            } else if (type === 'tick') {
+                // 1초마다 가벼운 째깍 소리
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1000, now);
+                gain.gain.setValueAtTime(0.06, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+                osc.start(now);
+                osc.stop(now + 0.03);
+            } else if (type === 'correct') {
+                // 정답 팡파레 화음
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now); // 도
+                osc.frequency.setValueAtTime(659.25, now + 0.1); // 미
+                osc.frequency.setValueAtTime(783.99, now + 0.2); // 솔
+                osc.frequency.setValueAtTime(1046.50, now + 0.3); // 높은 도
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
+                osc.start(now);
+                osc.stop(now + 0.55);
+            } else if (type === 'wrong') {
+                // 오답 부저음
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.linearRampToValueAtTime(130, now + 0.35);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            }
+        } catch (e) {
+            console.warn("Audio play skipped:", e);
+        }
+    }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'start') {
+                    // 경쾌한 시작 비프음
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.12); // A5
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } else if (type === 'stop') {
+                    // 정밀 정지 셔터음
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(660, now);
+                    osc.frequency.exponentialRampToValueAtTime(330, now + 0.15);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } else if (type === 'tick') {
+                    // 1초마다 가벼운 째깍 소리
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(1000, now);
+                    gain.gain.setValueAtTime(0.06, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+                    osc.start(now);
+                    osc.stop(now + 0.03);
+                } else if (type === 'correct') {
+                    // 정답 팡파레 화음
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // 도
+                    osc.frequency.setValueAtTime(659.25, now + 0.1); // 미
+                    osc.frequency.setValueAtTime(783.99, now + 0.2); // 솔
+                    osc.frequency.setValueAtTime(1046.50, now + 0.3); // 높은 도
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
+                    osc.start(now);
+                    osc.stop(now + 0.55);
+                } else if (type === 'wrong') {
+                    // 오답 부저음
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.linearRampToValueAtTime(130, now + 0.35);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                }
+            } catch (e) {
+                console.warn("Audio play skipped:", e);
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('sound-btn');
+            btn.textContent = soundEnabled ? '🔊' : '🔇';
+            btn.classList.toggle('text-amber-400', soundEnabled);
+            btn.classList.toggle('text-slate-500', !soundEnabled);
+            showToast(soundEnabled ? "효과음이 켜졌습니다." : "효과음이 음소거되었습니다.");
+        }
+
+        /**
+         * ====================================================================
+         * 4. 스톱워치 핵심 로직 및 설정 제어
+         * ====================================================================
+         */
+        function changeTargetSetting() {
+            if (isRunning) return;
+            const selectVal = document.getElementById('target-time-select').value;
+            if (selectVal === 'random') {
+                // 3.00 ~ 8.00초 사이 0.5초 단위 랜덤 목표 설정
+                const randomSteps = [3.00, 3.50, 4.00, 4.50, 5.00, 5.50, 6.00, 6.50, 7.00, 7.50, 8.00];
+                targetTime = randomSteps[Math.floor(Math.random() * randomSteps.length)];
+            } else {
+                targetTime = parseFloat(selectVal);
+            }
+            document.getElementById('target-time-display').textContent = targetTime.toFixed(2).padStart(5, '0');
+            resetCurrentRound(false);
+        }
+
+        function toggleBlindMode() {
+            isBlindMode = !isBlindMode;
+            const statusEl = document.getElementById('blind-status');
+            const badgeEl = document.getElementById('blind-badge');
+            const btnEl = document.getElementById('blind-mode-btn');
+
+            if (isBlindMode) {
+                statusEl.textContent = "ON";
+                statusEl.className = "text-amber-400 font-black";
+                badgeEl.classList.remove('hidden');
+                btnEl.classList.add('border-amber-400', 'bg-amber-950/40');
+                showToast("숨김 모드 ON: 시작 2초 후 숫자가 가려집니다!");
+            } else {
+                statusEl.textContent = "OFF";
+                statusEl.className = "text-slate-400";
+                badgeEl.classList.add('hidden');
+                btnEl.classList.remove('border-amber-400', 'bg-amber-950/40');
+                document.getElementById('blind-overlay').classList.add('hidden');
+                showToast("숨김 모드가 해제되었습니다.");
+            }
+        }
+
+        // 시작 / 정지 버튼 통합 핸들러
+        function handleMainAction() {
+            if (!isRunning) {
+                startStopwatch();
+            } else {
+                stopStopwatch();
+            }
+        }
+
+        let lastSecondTick = 0;
+
+        function startStopwatch() {
+            // 랜덤 모드일 경우 시작 직전 새 목표 시간 배정
+            if (document.getElementById('target-time-select').value === 'random') {
+                const randomSteps = [3.00, 3.50, 4.00, 4.50, 5.00, 5.50, 6.00, 6.50, 7.00, 7.50, 8.00];
+                targetTime = randomSteps[Math.floor(Math.random() * randomSteps.length)];
+                document.getElementById('target-time-display').textContent = targetTime.toFixed(2).padStart(5, '0');
+            }
+
+            isRunning = true;
+            startTime = performance.now();
+            lastSecondTick = 0;
+            playSound('start');
+
+            // UI 변경 (정지 버튼으로 전환)
+            const btn = document.getElementById('main-action-btn');
+            btn.className = "flex-1 py-5 px-8 rounded-2xl bg-gradient-to-r from-rose-500 to-orange-600 hover:from-rose-400 hover:to-orange-500 text-white font-black text-2xl sm:text-3xl shadow-lg shadow-rose-500/40 active:scale-95 transition cursor-pointer flex items-center justify-center gap-3";
+            document.getElementById('btn-icon').textContent = "⏹";
+            document.getElementById('btn-text').textContent = "정밀 정지! (SPACE)";
+
+            const timerBox = document.getElementById('timer-box');
+            timerBox.classList.add('running-pulse', 'border-amber-400');
+            document.getElementById('status-message').textContent = "목표 시간에 정확히 맞춰 정지 버튼을 누르세요!";
+            document.getElementById('status-message').className = "mt-3 text-sm sm:text-base font-bold text-amber-400 h-6";
+
+            // 블라인드 모드 작동 (2초 후 가림막 표시)
+            document.getElementById('blind-overlay').classList.add('hidden');
+            if (isBlindMode) {
+                blindTimeout = setTimeout(() => {
+                    if (isRunning) {
+                        document.getElementById('blind-overlay').classList.remove('hidden');
+                    }
+                }, 2000);
+            }
+
+            // 고해상도 타이머 루프 (10ms 단위 갱신)
+            timerInterval = setInterval(() => {
+                const now = performance.now();
+                elapsedTime = (now - startTime) / 1000;
+                document.getElementById('stopwatch-display').textContent = elapsedTime.toFixed(2).padStart(5, '0');
+
+                // 1초 경과 시마다 틱 효과음
+                const currentSec = Math.floor(elapsedTime);
+                if (currentSec > lastSecondTick) {
+                    lastSecondTick = currentSec;
+                    playSound('tick');
+                }
+            }, 10);
+        }
+
+        function stopStopwatch() {
+            if (!isRunning) return;
+            isRunning = false;
+            clearInterval(timerInterval);
+            clearTimeout(blindTimeout);
+
+            // 가림막 해제 및 최종 시간 고정
+            document.getElementById('blind-overlay').classList.add('hidden');
+            const finalTime = parseFloat(elapsedTime.toFixed(2));
+            document.getElementById('stopwatch-display').textContent = finalTime.toFixed(2).padStart(5, '0');
+
+            // 버튼 원상복구
+            const btn = document.getElementById('main-action-btn');
+            btn.className = "flex-1 py-5 px-8 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-2xl sm:text-3xl shadow-lg shadow-cyan-500/30 active:scale-95 transition cursor-pointer flex items-center justify-center gap-3";
+            document.getElementById('btn-icon').textContent = "▶";
+            document.getElementById('btn-text').textContent = "공정 시작 (SPACE)";
+
+            const timerBox = document.getElementById('timer-box');
+            timerBox.classList.remove('running-pulse', 'border-amber-400');
+
+            // 부호 포함 오차 및 절대 오차 계산
+            const rawSignedDiff = parseFloat((finalTime - targetTime).toFixed(2));
+            const absDiff = parseFloat(Math.abs(rawSignedDiff).toFixed(2));
+            const signedDiffStr = rawSignedDiff === 0 
+                ? "0.00초 (완벽 일치!)" 
+                : `${rawSignedDiff > 0 ? '+' : ''}${rawSignedDiff.toFixed(2)}초`;
+
+            // 1. 스톱워치 오차 범위에 따른 퀴즈 난이도(하/중/상) 및 배점 자동 결정
+            let difficulty = "easy";
+            let quizReward = 100;
+            if (absDiff <= 0.50) {
+                difficulty = "easy";
+                quizReward = 100;
+                playSound('stop-easy');
+            } else if (absDiff <= 1.00) {
+                difficulty = "medium";
+                quizReward = 120;
+                playSound('stop-medium');
+            } else {
+                difficulty = "hard";
+                quizReward = 150;
+                playSound('stop-hard');
+            }
+
+            // 2. 타이밍 정밀도 기본 점수 산출
+            let timeScore = 0;
+            let badgeText = "";
+            if (absDiff === 0) {
+                timeScore = 150; // 0.00초 완벽 일치 보너스
+                badgeText = "🏆 0.00초 나노 퍼펙트! (+50 보너스)";
+            } else if (absDiff <= 0.50) {
+                timeScore = Math.max(50, Math.round(100 - (absDiff * 100)));
+                badgeText = absDiff <= 0.10 ? "⚡ 초정밀 수율 달성!" : "🟢 정밀 공정 통과";
+            } else if (absDiff <= 1.00) {
+                timeScore = Math.max(20, Math.round(70 - ((absDiff - 0.50) * 100)));
+                badgeText = "🟡 미세 오차 발생 (응용 문제 배정)";
+            } else {
+                timeScore = 10;
+                badgeText = "🔴 공정 오차 초과! (심화 역전 찬스)";
+            }
+
+            currentRoundTimeScore = timeScore;
+            currentRoundQuizScore = 0;
+            currentRoundDifficulty = difficulty;
+            currentRoundQuizReward = quizReward;
+
+            // 퀴즈 모달 열기
+            openQuizModal(targetTime, finalTime, signedDiffStr, timeScore, badgeText, difficulty, quizReward);
+        }
+
+        function resetCurrentRound(showMsg = true) {
+            isRunning = false;
+            clearInterval(timerInterval);
+            clearTimeout(blindTimeout);
+            elapsedTime = 0;
+
+            document.getElementById('blind-overlay').classList.add('hidden');
+            document.getElementById('stopwatch-display').textContent = "00.00";
+            document.getElementById('status-message').textContent = "도전할 모둠을 선택하고 [공정 시작]을 누르세요!";
+            document.getElementById('status-message').className = "mt-3 text-sm sm:text-base font-bold text-slate-400 h-6";
+
+            const btn = document.getElementById('main-action-btn');
+            btn.className = "flex-1 py-5 px-8 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-2xl sm:text-3xl shadow-lg shadow-cyan-500/30 active:scale-95 transition cursor-pointer flex items-center justify-center gap-3";
+            document.getElementById('btn-icon').textContent = "▶";
+            document.getElementById('btn-text').textContent = "공정 시작 (SPACE)";
+            document.getElementById('timer-box').classList.remove('running-pulse', 'border-amber-400');
+
+            if (showMsg) showToast("타이머가 초기화되었습니다.");
+        }
+
+        /**
+         * ====================================================================
+         * 5. [2단계] 오차 기반 난이도별 반도체 퀴즈 팝업 및 정답 판정 로직
+         * ====================================================================
+         */
+        function getNextQuestionByDifficulty(targetDiff) {
+            // 해당 난이도 전체 문제 목록 확보 (혹시 전부 삭제된 경우 전체에서 폴백)
+            let pool = questionsDB.filter(q => q.difficulty === targetDiff);
+            if (pool.length === 0) {
+                pool = [...questionsDB];
+            }
+
+            // 해당 난이도 중 아직 출제되지 않은 문제 필터링
+            let available = pool.filter(q => !usedQuestionIds.includes(q.id));
+
+            // 해당 난이도 문제를 모두 풀었으면 해당 난이도의 출제 기록만 초기화하여 순환 출제
+            if (available.length === 0) {
+                const poolIds = pool.map(q => q.id);
+                usedQuestionIds = usedQuestionIds.filter(id => !poolIds.includes(id));
+                available = [...pool];
+            }
+
+            const picked = available[Math.floor(Math.random() * available.length)];
+            usedQuestionIds.push(picked.id);
+            updateRemainingQuestionCount();
+            return picked;
+        }
+
+        function openQuizModal(tTime, recordedTime, signedDiffStr, timeScore, badgeText, difficulty, quizReward) {
+            quizAnswered = false;
+            currentQuestion = getNextQuestionByDifficulty(difficulty);
+
+            // 스톱워치 결과 세팅
+            document.getElementById('res-target-time').textContent = `${tTime.toFixed(2)}초`;
+            document.getElementById('res-recorded-time').textContent = `${recordedTime.toFixed(2)}초`;
+            document.getElementById('res-signed-diff').textContent = signedDiffStr;
+            document.getElementById('res-time-score').textContent = `+${timeScore}`;
+            document.getElementById('res-precision-badge').textContent = badgeText;
+
+            // 난이도별 시각 피드백(배지 색상, 모달 테두리 색상, 안내 문구) 적용
+            const modalCard = document.getElementById('quiz-modal-card');
+            const diffBadge = document.getElementById('quiz-difficulty-badge');
+            const signedDiffEl = document.getElementById('res-signed-diff');
+
+            if (difficulty === 'easy') {
+                modalCard.className = "bg-slate-900 border-2 border-emerald-400 rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl my-auto transition-all";
+                diffBadge.className = "px-3.5 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs sm:text-sm font-black border border-emerald-400/60";
+                diffBadge.textContent = `🟢 난이도 하 - 정밀 공정 성공! 기본 문제 (+${quizReward}점)`;
+                signedDiffEl.className = "text-emerald-400 font-digital text-xl";
+            } else if (difficulty === 'medium') {
+                modalCard.className = "bg-slate-900 border-2 border-amber-400 rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl my-auto transition-all";
+                diffBadge.className = "px-3.5 py-1.5 rounded-full bg-amber-500/20 text-amber-300 text-xs sm:text-sm font-black border border-amber-400/60";
+                diffBadge.textContent = `🟡 난이도 중 - 미세 오차 발생! 응용 문제 (+${quizReward}점)`;
+                signedDiffEl.className = "text-amber-400 font-digital text-xl";
+            } else {
+                modalCard.className = "bg-slate-900 border-2 border-rose-500 rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl my-auto transition-all";
+                diffBadge.className = "px-3.5 py-1.5 rounded-full bg-rose-500/20 text-rose-300 text-xs sm:text-sm font-black border border-rose-500/60 animate-pulse";
+                diffBadge.textContent = `🔴 난이도 상 - 공정 오차 초과! 심화 문제 (+${quizReward}점 역전 찬스)`;
+                signedDiffEl.className = "text-rose-400 font-digital text-xl";
+            }
+
+            // 퀴즈 문제 세팅
+            document.getElementById('quiz-category').textContent = `단원: ${currentQuestion.category}`;
+            document.getElementById('quiz-question').textContent = `Q. ${currentQuestion.question}`;
+
+            // 보기 버튼 생성
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+            const labels = ['①', '②', '③', '④'];
+
+            currentQuestion.options.forEach((optText, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "quiz-opt-btn text-left p-4 rounded-2xl bg-slate-800 hover:bg-slate-700 border-2 border-slate-700 hover:border-cyan-400 text-white font-bold text-base sm:text-lg transition cursor-pointer flex items-center gap-3";
+                btn.innerHTML = `<span class="text-cyan-400 font-black text-xl">${labels[idx]}</span> <span>${optText}</span>`;
+                btn.onclick = () => selectQuizAnswer(idx, btn);
+                optionsContainer.appendChild(btn);
+            });
+
+            // 해설 및 다음 버튼 숨김 초기화
+            document.getElementById('quiz-feedback-box').classList.add('hidden');
+            document.getElementById('quiz-footer').classList.add('hidden');
+
+            // 모달 표시
+            document.getElementById('quiz-modal').classList.remove('hidden');
+        }
+
+        function selectQuizAnswer(selectedIndex, selectedBtn) {
+            if (quizAnswered) return;
+            quizAnswered = true;
+
+            const isCorrect = (selectedIndex === currentQuestion.answer);
+            const allBtns = document.querySelectorAll('.quiz-opt-btn');
+
+            allBtns.forEach((btn, idx) => {
+                btn.disabled = true;
+                btn.classList.remove('hover:bg-slate-700', 'hover:border-cyan-400', 'cursor-pointer');
+                if (idx === currentQuestion.answer) {
+                    // 정답 버튼 초록색 강조
+                    btn.classList.remove('bg-slate-800', 'border-slate-700');
+                    btn.classList.add('bg-emerald-950', 'border-emerald-400', 'text-emerald-200');
+                } else if (idx === selectedIndex && !isCorrect) {
+                    // 선택한 오답 버튼 붉은색 강조
+                    btn.classList.remove('bg-slate-800', 'border-slate-700');
+                    btn.classList.add('bg-rose-950', 'border-rose-500', 'text-rose-200');
+                } else {
+                    btn.classList.add('opacity-50');
+                }
+            });
+
+            const feedbackBox = document.getElementById('quiz-feedback-box');
+            const feedbackTitle = document.getElementById('feedback-title');
+
+            if (isCorrect) {
+                playSound('correct');
+                currentRoundQuizScore = currentRoundQuizReward;
+                feedbackBox.className = "rounded-2xl p-5 border-2 border-emerald-400 bg-emerald-950/60 mb-6";
+                const bonusLabel = currentRoundDifficulty === 'hard' ? "심화 문제 역전 성공!" : "반도체 원리 마스터!";
+                feedbackTitle.textContent = `🎉 정답입니다! ${bonusLabel} (+${currentRoundQuizReward}점)`;
+                feedbackTitle.className = "text-lg sm:text-xl font-black text-emerald-300";
+            } else {
+                playSound('wrong');
+                currentRoundQuizScore = 0;
+                feedbackBox.className = "rounded-2xl p-5 border-2 border-rose-500 bg-rose-950/60 mb-6";
+                feedbackTitle.textContent = `😢 아쉽습니다! 정답은 ${currentQuestion.answer + 1}번입니다 (+0점)`;
+                feedbackTitle.className = "text-lg sm:text-xl font-black text-rose-300";
+            }
+
+            const totalEarned = currentRoundTimeScore + currentRoundQuizScore;
+            document.getElementById('total-round-score').textContent = `이번 라운드 총 획득: +${totalEarned}점`;
+            document.getElementById('feedback-explanation').textContent = `💡 핵심 해설: ${currentQuestion.explanation}`;
+
+            feedbackBox.classList.remove('hidden');
+            document.getElementById('quiz-footer').classList.remove('hidden');
+        }
+
+        function finishRoundAndCloseModal() {
+            // 현재 활성 모둠에 점수 합산
+            const totalEarned = currentRoundTimeScore + currentRoundQuizScore;
+            const team = teams.find(t => t.id === activeTeamId);
+            if (team) {
+                team.score += totalEarned;
+                showToast(`${team.name}에 +${totalEarned}점이 반영되었습니다!`);
+            }
+
+            // 다음 모둠으로 자동 순환 편의 기능
+            const currentIdx = teams.findIndex(t => t.id === activeTeamId);
+            if (currentIdx !== -1 && teams.length > 0) {
+                const nextTeam = teams[(currentIdx + 1) % teams.length];
+                activeTeamId = nextTeam.id;
+            }
+
+            renderTeams();
+            document.getElementById('quiz-modal').classList.add('hidden');
+            resetCurrentRound(false);
+        }
+
+        /**
+         * ====================================================================
+         * 6. 모둠별 점수판 (리더보드) 관리 로직
+         * ====================================================================
+         */
+        function renderTeams() {
+            const listEl = document.getElementById('team-list');
+            listEl.innerHTML = '';
+
+            // 최고 점수 계산 (1위 왕관 표시용)
+            const maxScore = Math.max(...teams.map(t => t.score));
+
+            teams.forEach(team => {
+                const isActive = (team.id === activeTeamId);
+                const isFirstPlace = (team.score > 0 && team.score === maxScore);
+
+                const item = document.createElement('div');
+                item.className = `p-3.5 rounded-2xl border-2 transition cursor-pointer flex items-center justify-between ${
+                    isActive 
+                    ? 'bg-cyan-950/60 border-amber-400 shadow-lg shadow-amber-400/10' 
+                    : 'bg-slate-950/70 border-slate-800 hover:border-slate-600'
+                }`;
+                item.onclick = () => selectActiveTeam(team.id);
+
+                item.innerHTML = `
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-3 h-3 rounded-full ${isActive ? 'bg-amber-400 animate-ping' : 'bg-slate-700'}"></span>
+                        <input type="text" value="${team.name}" 
+                            onclick="event.stopPropagation()" 
+                            onchange="renameTeam(${team.id}, this.value)"
+                            class="bg-transparent font-black text-base sm:text-lg w-28 sm:w-32 outline-none border-b border-transparent focus:border-cyan-400 ${isActive ? 'text-white' : 'text-slate-300'}"
+                            title="클릭하여 모둠 이름 수정"
+                        />
+                        ${isFirstPlace ? '<span class="text-base" title="현재 1위">👑</span>' : ''}
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-digital text-xl sm:text-2xl font-black ${isActive ? 'text-amber-400' : 'text-cyan-400'}">${team.score}</span>
+                        <span class="text-xs text-slate-500 font-bold">점</span>
+                        <div class="flex flex-col ml-1" onclick="event.stopPropagation()">
+                            <button onclick="adjustTeamScore(${team.id}, 10)" class="text-[10px] leading-none px-1.5 py-0.5 bg-slate-800 hover:bg-cyan-700 text-slate-300 rounded mb-0.5 cursor-pointer" title="+10점">▲</button>
+                            <button onclick="adjustTeamScore(${team.id}, -10)" class="text-[10px] leading-none px-1.5 py-0.5 bg-slate-800 hover:bg-rose-800 text-slate-300 rounded cursor-pointer" title="-10점">▼</button>
+                        </div>
+                    </div>
+                `;
+                listEl.appendChild(item);
+            });
+
+            // 상단 현재 도전 팀 배지 동기화
+            const activeTeam = teams.find(t => t.id === activeTeamId);
+            if (activeTeam) {
+                document.getElementById('active-team-badge').textContent = activeTeam.name;
+            }
+        }
+
+        function selectActiveTeam(id) {
+            if (isRunning) {
+                showToast("스톱워치 작동 중에는 모둠을 변경할 수 없습니다.");
+                return;
+            }
+            activeTeamId = id;
+            renderTeams();
+        }
+
+        function renameTeam(id, newName) {
+            const team = teams.find(t => t.id === id);
+            if (team && newName.trim() !== "") {
+                team.name = newName.trim();
+                renderTeams();
+            }
+        }
+
+        function adjustTeamScore(id, delta) {
+            const team = teams.find(t => t.id === id);
+            if (team) {
+                team.score = Math.max(0, team.score + delta);
+                renderTeams();
+            }
+        }
+
+        function addTeam() {
+            if (teams.length >= 10) {
+                showToast("최대 10개 모둠까지 추가할 수 있습니다.");
+                return;
+            }
+            const nextNum = teams.length + 1;
+            const newId = Date.now();
+            teams.push({ id: newId, name: `${nextNum}모둠`, score: 0 });
+            renderTeams();
+            showToast(`${nextNum}모둠이 추가되었습니다.`);
+        }
+
+        function resetAllScores() {
+            teams.forEach(t => t.score = 0);
+            usedQuestionIds = [];
+            updateRemainingQuestionCount();
+            renderTeams();
+            showToast("모든 모둠 점수와 문제 출제 기록이 초기화되었습니다.");
+        }
+
+        function updateRemainingQuestionCount() {
+            const totalRem = questionsDB.length - usedQuestionIds.length;
+            document.getElementById('remaining-q-count').textContent = `총 ${totalRem} / ${questionsDB.length}문제`;
+
+            const easyRem = questionsDB.filter(q => q.difficulty === 'easy' && !usedQuestionIds.includes(q.id)).length;
+            const medRem = questionsDB.filter(q => q.difficulty === 'medium' && !usedQuestionIds.includes(q.id)).length;
+            const hardRem = questionsDB.filter(q => q.difficulty === 'hard' && !usedQuestionIds.includes(q.id)).length;
+
+            const breakdownEl = document.getElementById('remaining-diff-breakdown');
+            if (breakdownEl) {
+                breakdownEl.innerHTML = `
+                    <span class="py-1 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-500/30">하: ${easyRem}</span>
+                    <span class="py-1 rounded bg-amber-950/60 text-amber-300 border border-amber-500/30">중: ${medRem}</span>
+                    <span class="py-1 rounded bg-rose-950/60 text-rose-300 border border-rose-500/30">상: ${hardRem}</span>
+                `;
+            }
+        }
+
+        /**
+         * ====================================================================
+         * 7. 교사용 문제 은행 관리 모달 기능 (난이도 선택 및 필터링 포함)
+         * ====================================================================
+         */
+        function openQuestionManager() {
+            setManagerFilter('all');
+            document.getElementById('manager-modal').classList.remove('hidden');
+        }
+
+        function closeQuestionManager() {
+            document.getElementById('manager-modal').classList.add('hidden');
+        }
+
+        function setManagerFilter(filterDiff) {
+            currentManagerFilter = filterDiff;
+            ['all', 'easy', 'medium', 'hard'].forEach(f => {
+                const btn = document.getElementById(`filter-btn-${f}`);
+                if (!btn) return;
+                if (f === filterDiff) {
+                    btn.classList.add('ring-2', 'ring-cyan-400', 'bg-cyan-950');
+                } else {
+                    btn.classList.remove('ring-2', 'ring-cyan-400', 'bg-cyan-950');
+                }
+            });
+            renderManagerQuestionList();
+        }
+
+        function renderManagerQuestionList() {
+            const listEl = document.getElementById('manager-q-list');
+            listEl.innerHTML = '';
+
+            const filtered = currentManagerFilter === 'all' 
+                ? questionsDB 
+                : questionsDB.filter(q => q.difficulty === currentManagerFilter);
+
+            const diffMeta = {
+                easy: { label: "🟢 난이도 하 (+100점)", cls: "bg-emerald-950 text-emerald-300 border-emerald-500/40" },
+                medium: { label: "🟡 난이도 중 (+120점)", cls: "bg-amber-950 text-amber-300 border-amber-500/40" },
+                hard: { label: "🔴 난이도 상 (+150점)", cls: "bg-rose-950 text-rose-300 border-rose-500/40" }
+            };
+
+            filtered.forEach((q, idx) => {
+                const meta = diffMeta[q.difficulty] || diffMeta.easy;
+                const card = document.createElement('div');
+                card.className = "p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-start justify-between gap-4";
+                card.innerHTML = `
+                    <div class="text-sm">
+                        <div class="flex flex-wrap items-center gap-2 mb-1.5">
+                            <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-bold text-xs">#${idx + 1}</span>
+                            <span class="px-2.5 py-0.5 rounded-full border font-bold text-xs ${meta.cls}">${meta.label}</span>
+                            <span class="text-xs text-slate-400">${q.category}</span>
+                        </div>
+                        <p class="font-bold text-white mb-1">${q.question}</p>
+                        <p class="text-xs text-slate-400">
+                            보기: ① ${q.options[0]} | ② ${q.options[1]} | ③ ${q.options[2]} | ④ ${q.options[3]} 
+                            <strong class="text-emerald-400 ml-2">[정답: ${q.answer + 1}번]</strong>
+                        </p>
+                    </div>
+                    <button onclick="deleteQuestion(${q.id})" class="px-2.5 py-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-800 text-rose-300 text-xs font-bold shrink-0 cursor-pointer">삭제</button>
+                `;
+                listEl.appendChild(card);
+            });
+        }
+
+        function addNewQuestion() {
+            const difficulty = document.getElementById('new-q-difficulty').value;
+            const text = document.getElementById('new-q-text').value.trim();
+            const opt0 = document.getElementById('new-q-opt0').value.trim();
+            const opt1 = document.getElementById('new-q-opt1').value.trim();
+            const opt2 = document.getElementById('new-q-opt2').value.trim();
+            const opt3 = document.getElementById('new-q-opt3').value.trim();
+            const answer = parseInt(document.getElementById('new-q-answer').value, 10);
+            const exp = document.getElementById('new-q-exp').value.trim() || "선생님이 추가하신 핵심 문제입니다.";
+
+            if (!text || !opt0 || !opt1 || !opt2 || !opt3) {
+                showToast("질문과 4개의 보기를 모두 입력해주세요!");
+                return;
+            }
+
+            questionsDB.push({
+                id: Date.now(),
+                difficulty: difficulty,
+                category: "교사 추가 문제",
+                question: text,
+                options: [opt0, opt1, opt2, opt3],
+                answer: answer,
+                explanation: exp
+            });
+
+            // 입력창 비우기
+            ['new-q-text', 'new-q-opt0', 'new-q-opt1', 'new-q-opt2', 'new-q-opt3', 'new-q-exp'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+
+            renderManagerQuestionList();
+            updateRemainingQuestionCount();
+            showToast("새 반도체 문제가 성공적으로 추가되었습니다!");
+        }
+
+        function deleteQuestion(id) {
+            if (questionsDB.length <= 1) {
+                showToast("최소 1개 이상의 문제는 남아 있어야 합니다.");
+                return;
+            }
+            questionsDB = questionsDB.filter(q => q.id !== id);
+            usedQuestionIds = usedQuestionIds.filter(usedId => usedId !== id);
+            renderManagerQuestionList();
+            updateRemainingQuestionCount();
+            showToast("문제가 삭제되었습니다.");
+        }
+
+        /**
+         * ====================================================================
+         * 8. 유틸리티 및 키보드 단축키 지원
+         * ====================================================================
+         */
+        let toastTimer = null;
+        function showToast(msg) {
+            const el = document.getElementById('toast-msg');
+            el.textContent = msg;
+            el.classList.remove('hidden');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                el.classList.add('hidden');
+            }, 2500);
+        }
+
+        // 스페이스바(Space)로 스톱워치 시작/정지 제어 (입력창 포커스 중일 때는 제외)
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                const tag = document.activeElement.tagName.toLowerCase();
+                const isModalOpen = !document.getElementById('quiz-modal').classList.contains('hidden') || 
+                                    !document.getElementById('manager-modal').classList.contains('hidden');
+                if (tag !== 'input' && tag !== 'select' && !isModalOpen) {
+                    e.preventDefault();
+                    handleMainAction();
+                }
+            }
+        });
+
+        // 초기 화면 렌더링
+        window.onload = () => {
+            renderTeams();
+            updateRemainingQuestionCount();
+        };
+    </script>
+</body>
+</html>
