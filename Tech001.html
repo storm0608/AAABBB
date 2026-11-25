@@ -1,0 +1,2043 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>중학교 기술·가정 | 발명 단원 가로세로 낱말퍼즐</title>
+    <style>
+        /* ====================================================================
+           1. 기본 리셋 및 교육용 디자인 토큰 (외부 CDN 없는 100% 독립 CSS)
+           ==================================================================== */
+        :root {
+            --bg-page: #f0f4f8;
+            --bg-card: #ffffff;
+            --bg-header: #1e293b;
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #dbeafe;
+            --accent: #f59e0b;
+            --accent-light: #fef3c7;
+            --success: #16a34a;
+            --success-bg: #dcfce7;
+            --danger: #dc2626;
+            --danger-bg: #fee2e2;
+            --text-main: #0f172a;
+            --text-sub: #475569;
+            --border-color: #cbd5e1;
+            --cell-empty: #1e293b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Pretendard', 'Malgun Gothic', 'Apple SD Gothic Neo', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-page);
+            background-image:
+                radial-gradient(rgba(37, 99, 235, 0.08) 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        button, select, input {
+            font-family: inherit;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* ====================================================================
+           2. 상단 헤더 및 수업 제어 도구바
+           ==================================================================== */
+        .app-header {
+            background: var(--bg-header);
+            color: #ffffff;
+            padding: 14px 24px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.18);
+            position: sticky;
+            top: 0;
+            z-index: 30;
+        }
+
+        .brand-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-badge {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4);
+            flex-shrink: 0;
+        }
+
+        .brand-title {
+            font-size: 1.3rem;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-title span {
+            color: #60a5fa;
+        }
+
+        .brand-sub {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+        .header-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stage-selector-wrap {
+            display: flex;
+            align-items: center;
+            background: #334155;
+            padding: 4px 10px;
+            border-radius: 12px;
+            gap: 8px;
+        }
+
+        .stage-selector-wrap label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #cbd5e1;
+        }
+
+        .stage-select {
+            background: #0f172a;
+            color: #fbbf24;
+            font-weight: 800;
+            font-size: 0.9rem;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            padding: 6px 10px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            padding: 7px 14px;
+            border-radius: 12px;
+            font-size: 0.88rem;
+            font-weight: 800;
+        }
+
+        .status-pill span.val {
+            color: #38bdf8;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .status-pill span.progress-val {
+            color: #4ade80;
+        }
+
+        .sound-toggle {
+            background: #334155;
+            border: 1px solid #475569;
+            color: #ffffff;
+            padding: 7px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+
+        .sound-toggle:hover {
+            background: #475569;
+        }
+
+        /* ====================================================================
+           3. 메인 레이아웃 (좌측 퍼즐 격자 영역 + 우측 가로/세로 열쇠 영역)
+           ==================================================================== */
+        .main-layout {
+            flex: 1;
+            max-width: 1380px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1.15fr 1fr;
+            gap: 22px;
+            align-items: start;
+        }
+
+        @media (max-width: 1024px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+                padding: 14px;
+            }
+        }
+
+        .card-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 22px;
+            padding: 22px;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+        }
+
+        /* 현재 선택된 문제 배너 */
+        .active-clue-banner {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border: 2px solid #93c5fd;
+            border-radius: 16px;
+            padding: 14px 18px;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            min-height: 74px;
+        }
+
+        .active-clue-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .active-clue-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.82rem;
+            font-weight: 900;
+            color: var(--primary-dark);
+        }
+
+        .dir-pill {
+            background: var(--primary);
+            color: #ffffff;
+            padding: 2px 9px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+        }
+
+        .active-clue-text {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--text-main);
+            line-height: 1.4;
+        }
+
+        .chosung-preview {
+            background: #ffffff;
+            border: 1.5px solid #60a5fa;
+            color: var(--primary-dark);
+            padding: 6px 12px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 900;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        /* ====================================================================
+           4. 가로세로 낱말퍼즐 격자 (Grid)
+           ==================================================================== */
+        .grid-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 18px;
+            overflow-x: auto;
+            padding: 4px;
+        }
+
+        .crossword-grid {
+            display: grid;
+            background: var(--cell-empty);
+            border: 4px solid var(--cell-empty);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+            user-select: none;
+        }
+
+        .cw-cell {
+            width: clamp(36px, 4.4vw, 52px);
+            height: clamp(36px, 4.4vw, 52px);
+            position: relative;
+            border: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (max-width: 600px) {
+            .cw-cell {
+                width: 34px;
+                height: 34px;
+            }
+        }
+
+        .cw-cell.blocked {
+            background: var(--cell-empty);
+        }
+
+        .cw-cell.active-cell {
+            background: #ffffff;
+            cursor: pointer;
+            transition: background-color 0.12s ease;
+        }
+
+        .cw-cell.active-cell.in-word {
+            background: var(--primary-light);
+        }
+
+        .cw-cell.active-cell.focused {
+            background: #fde047;
+            box-shadow: inset 0 0 0 3px #d97706;
+        }
+
+        .cw-cell.active-cell.checked-correct {
+            background: var(--success-bg);
+        }
+
+        .cw-cell.active-cell.checked-wrong {
+            background: var(--danger-bg);
+        }
+
+        .cell-num {
+            position: absolute;
+            top: 2px;
+            left: 3px;
+            font-size: 0.65rem;
+            font-weight: 900;
+            color: #475569;
+            line-height: 1;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .cw-cell.focused .cell-num {
+            color: #92400e;
+        }
+
+        .cell-input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
+            text-align: center;
+            font-size: clamp(1.15rem, 2vw, 1.55rem);
+            font-weight: 900;
+            color: var(--text-main);
+            outline: none;
+            cursor: pointer;
+            padding-top: 6px;
+            caret-color: transparent;
+        }
+
+        .cw-cell.checked-correct .cell-input {
+            color: #15803d;
+        }
+
+        .cw-cell.checked-wrong .cell-input {
+            color: #b91c1c;
+        }
+
+        /* ====================================================================
+           5. 하단 액션 버튼 및 전자칠판용 글자 선택 패드
+           ==================================================================== */
+        .action-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 14px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 15px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 800;
+            border: 1.5px solid transparent;
+            cursor: pointer;
+            transition: transform 0.1s ease, filter 0.15s ease;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);
+        }
+        .btn-primary:hover { filter: brightness(1.08); }
+
+        .btn-success {
+            background: var(--success);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+        }
+        .btn-success:hover { filter: brightness(1.08); }
+
+        .btn-amber {
+            background: var(--accent-light);
+            color: #92400e;
+            border-color: #fbbf24;
+        }
+        .btn-amber:hover { background: #fde68a; }
+
+        .btn-amber.active {
+            background: #f59e0b;
+            color: #ffffff;
+        }
+
+        .btn-outline {
+            background: #f8fafc;
+            color: #334155;
+            border-color: #cbd5e1;
+        }
+        .btn-outline:hover { background: #e2e8f0; }
+
+        .btn-danger-outline {
+            background: #fff1f2;
+            color: #be123c;
+            border-color: #fecdd3;
+        }
+        .btn-danger-outline:hover { background: #ffe4e6; }
+
+        /* 전자칠판/태블릿 터치 입력 도우미 (음절 뱅크) */
+        .touch-pad-box {
+            background: #f8fafc;
+            border: 1.5px dashed #94a3b8;
+            border-radius: 16px;
+            padding: 12px 14px;
+            margin-top: 8px;
+        }
+
+        .touch-pad-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: var(--text-sub);
+        }
+
+        .syllable-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .syl-btn {
+            min-width: 38px;
+            height: 38px;
+            padding: 0 8px;
+            border-radius: 10px;
+            background: #ffffff;
+            border: 1.5px solid #cbd5e1;
+            color: var(--text-main);
+            font-size: 1rem;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: all 0.1s ease;
+        }
+
+        .syl-btn:hover {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            color: var(--primary-dark);
+        }
+
+        .syl-btn.erase-btn {
+            background: #fee2e2;
+            border-color: #fca5a5;
+            color: #b91c1c;
+            font-size: 0.85rem;
+        }
+
+        /* ====================================================================
+           6. 우측 가로 열쇠 / 세로 열쇠 힌트 패널
+           ==================================================================== */
+        .clues-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 18px;
+        }
+
+        .clue-section-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 1.05rem;
+            font-weight: 900;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .clue-section-title .badge-across {
+            background: #dbeafe;
+            color: #1d4ed8;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+        }
+
+        .clue-section-title .badge-down {
+            background: #fef3c7;
+            color: #b45309;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+        }
+
+        .clue-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 290px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .clue-item {
+            padding: 11px 14px;
+            border-radius: 13px;
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            cursor: pointer;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+            transition: all 0.14s ease;
+        }
+
+        .clue-item:hover {
+            border-color: #93c5fd;
+            background: #eff6ff;
+        }
+
+        .clue-item.active {
+            background: #dbeafe;
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
+        }
+
+        .clue-item.solved {
+            background: #f0fdf4;
+            border-color: #86efac;
+        }
+
+        .clue-main {
+            font-size: 0.94rem;
+            line-height: 1.45;
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .clue-num {
+            font-weight: 900;
+            color: var(--primary-dark);
+            margin-right: 4px;
+        }
+
+        .clue-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .len-tag {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #64748b;
+            background: #e2e8f0;
+            padding: 2px 7px;
+            border-radius: 6px;
+        }
+
+        .chosung-tag {
+            font-size: 0.78rem;
+            font-weight: 900;
+            color: #b45309;
+            background: #fef3c7;
+            padding: 2px 7px;
+            border-radius: 6px;
+        }
+
+        .solved-check {
+            font-size: 0.85rem;
+            font-weight: 900;
+            color: var(--success);
+        }
+
+        /* ====================================================================
+           7. 축하 결과 모달 & 토스트 메시지 & 폭죽 캔버스
+           ==================================================================== */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.78);
+            backdrop-filter: blur(4px);
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .victory-card {
+            background: #ffffff;
+            border: 3px solid #3b82f6;
+            border-radius: 26px;
+            max-width: 520px;
+            width: 100%;
+            padding: 32px 26px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.35);
+            position: relative;
+            z-index: 55;
+        }
+
+        .victory-trophy {
+            font-size: 4rem;
+            margin-bottom: 10px;
+        }
+
+        .victory-title {
+            font-size: 1.65rem;
+            font-weight: 900;
+            color: var(--text-main);
+            margin-bottom: 6px;
+        }
+
+        .victory-sub {
+            font-size: 0.95rem;
+            color: var(--text-sub);
+            margin-bottom: 20px;
+        }
+
+        .score-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 14px;
+            margin-bottom: 22px;
+        }
+
+        .score-box-item span.lbl {
+            display: block;
+            font-size: 0.78rem;
+            color: var(--text-sub);
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .score-box-item strong {
+            font-size: 1.25rem;
+            font-weight: 900;
+            color: var(--primary-dark);
+        }
+
+        .victory-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: #ffffff;
+            padding: 12px 22px;
+            border-radius: 14px;
+            font-size: 0.92rem;
+            font-weight: 800;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.35);
+            z-index: 60;
+        }
+
+        #confetti-canvas {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 52;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 축하 폭죽 캔버스 -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- ====================================================================
+         상단 헤더 및 수업 제어 도구바
+         ==================================================================== -->
+    <header class="app-header">
+        <div class="brand-wrap">
+            <div class="brand-badge">💡</div>
+            <div>
+                <h1 class="brand-title"><span>기술·가정</span> 발명 단원 가로세로 낱말퍼즐</h1>
+                <p class="brand-sub">중학교 기술·가정 교과서 핵심 개념 복습 퀴즈</p>
+            </div>
+        </div>
+
+        <div class="header-controls">
+            <div class="stage-selector-wrap">
+                <label for="stage-select">단원 스테이지:</label>
+                <select id="stage-select" class="stage-select">
+                    <option value="0">1단계: 발명의 이해와 사고 기법 (10문항)</option>
+                    <option value="1">2단계: 발명 과정과 지식재산권 (10문항)</option>
+                </select>
+            </div>
+
+            <div class="status-pill">
+                <div>⏱️ 시간: <span id="timer-display" class="val">00:00</span></div>
+                <div>📊 완성도: <span id="progress-display" class="progress-val">0%</span></div>
+                <div>💡 힌트: <span id="hint-count-display" class="val" style="color:#fbbf24;">0회</span></div>
+            </div>
+
+            <button id="sound-btn" type="button" class="sound-toggle" title="효과음 켜기/끄기">🔊</button>
+        </div>
+    </header>
+
+    <!-- ====================================================================
+         메인 레이아웃 (좌측: 퍼즐판 + 컨트롤 / 우측: 가로·세로 열쇠)
+         ==================================================================== -->
+    <main class="main-layout">
+        <!-- 좌측 퍼즐 보드 패널 -->
+        <section class="card-panel">
+            <!-- 현재 선택된 문제 안내 배너 -->
+            <div class="active-clue-banner">
+                <div class="active-clue-left">
+                    <div class="active-clue-tag">
+                        <span id="active-dir-pill" class="dir-pill">가로 1번</span>
+                        <span id="active-word-len">(2글자)</span>
+                    </div>
+                    <div id="active-clue-desc" class="active-clue-text">
+                        퍼즐 칸이나 우측의 가로·세로 열쇠를 선택해 문제를 풀어보세요!
+                    </div>
+                </div>
+                <div id="active-chosung-box" class="chosung-preview hidden">초성: ㅂㅁ</div>
+            </div>
+
+            <!-- 가로세로 퍼즐 격자 -->
+            <div class="grid-wrapper">
+                <div id="crossword-grid" class="crossword-grid" role="grid" aria-label="발명 단원 가로세로 낱말퍼즐"></div>
+            </div>
+
+            <!-- 기능 버튼 모음 -->
+            <div class="action-toolbar">
+                <button id="check-answers-btn" type="button" class="btn btn-success">
+                    ✅ 정답 채점하기
+                </button>
+                <button id="toggle-chosung-btn" type="button" class="btn btn-amber">
+                    🔤 초성 힌트: <span id="chosung-status">OFF</span>
+                </button>
+                <button id="reveal-letter-btn" type="button" class="btn btn-primary">
+                    ✨ 한 글자 힌트
+                </button>
+                <button id="reveal-all-btn" type="button" class="btn btn-outline">
+                    👀 정답 공개
+                </button>
+                <button id="reset-puzzle-btn" type="button" class="btn btn-danger-outline">
+                    🔄 다시 풀기
+                </button>
+            </div>
+
+            <!-- 전자칠판/태블릿 터치 입력용 글자 선택 패드 -->
+            <div class="touch-pad-box">
+                <div class="touch-pad-header">
+                    <span>📱 전자칠판·태블릿 터치 입력 패드 (선택된 칸에 바로 입력됩니다)</span>
+                    <button id="toggle-pad-btn" type="button" style="background:none;border:none;color:#2563eb;font-weight:800;cursor:pointer;">패드 접기 ▲</button>
+                </div>
+                <div id="syllable-pad" class="syllable-buttons"></div>
+            </div>
+        </section>
+
+        <!-- 우측 가로 열쇠 / 세로 열쇠 힌트 목록 패널 -->
+        <aside class="card-panel clues-container">
+            <div>
+                <div class="clue-section-title">
+                    <span class="badge-across">➡ 가로 열쇠 (ACROSS)</span>
+                    <span id="across-count" style="font-size:0.82rem;color:#64748b;">총 5문제</span>
+                </div>
+                <div id="across-clue-list" class="clue-list"></div>
+            </div>
+
+            <div>
+                <div class="clue-section-title">
+                    <span class="badge-down">⬇ 세로 열쇠 (DOWN)</span>
+                    <span id="down-count" style="font-size:0.82rem;color:#64748b;">총 5문제</span>
+                </div>
+                <div id="down-clue-list" class="clue-list"></div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- ====================================================================
+         퍼즐 완성 축하 결과 모달
+         ==================================================================== -->
+    <div id="victory-modal" class="modal-backdrop hidden">
+        <div class="victory-card">
+            <div class="victory-trophy">🏆</div>
+            <h2 class="victory-title">축하합니다! 퍼즐 완벽 해독!</h2>
+            <p id="victory-stage-name" class="victory-sub">1단계: 발명의 이해와 사고 기법을 모두 완성했습니다.</p>
+
+            <div class="score-summary-grid">
+                <div class="score-box-item">
+                    <span class="lbl">소요 시간</span>
+                    <strong id="final-time-val">01:25</strong>
+                </div>
+                <div class="score-box-item">
+                    <span class="lbl">힌트 사용</span>
+                    <strong id="final-hint-val">0회</strong>
+                </div>
+                <div class="score-box-item">
+                    <span class="lbl">최종 점수</span>
+                    <strong id="final-score-val" style="color:#16a34a;">100점</strong>
+                </div>
+            </div>
+
+            <div class="victory-actions">
+                <button id="next-stage-btn" type="button" class="btn btn-primary" style="padding:12px 22px;font-size:1rem;">
+                    다음 스테이지 도전 ➔
+                </button>
+                <button id="close-victory-btn" type="button" class="btn btn-outline" style="padding:12px 20px;font-size:1rem;">
+                    퍼즐판 확인하기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 토스트 알림 -->
+    <div id="toast-msg" class="toast hidden"></div>
+
+    <!-- ====================================================================
+         순수 Vanilla JavaScript 퍼즐 엔진 (100% 독립 실행)
+         ==================================================================== -->
+    <script>
+    (function () {
+        "use strict";
+
+        /* --------------------------------------------------------------------
+           1. 중학교 기술·가정 '발명' 단원 가로세로 퍼즐 데이터 (좌표 100% 교차 검증 완료)
+           --------------------------------------------------------------------
+           [Stage 0: 1단계 - 발명의 이해와 사고 기법 (10x10)]
+           좌표 교차 검증표:
+           - 가로 1 (r:1, c:1): 발명 [1,1]=발, [1,2]=명
+           - 세로 1 (r:1, c:1): 발견 [1,1]=발, [2,1]=견  --> 교차 [1,1]='발'
+           - 가로 2 (r:3, c:0): 마인드맵 [3,0]=마, [3,1]=인, [3,2]=드, [3,3]=맵
+           - 세로 2 (r:1, c:3): 브레인스토밍 [1,3]=브, [2,3]=레, [3,3]=인, [4,3]=스, [5,3]=토, [6,3]=밍
+             * 잠시! [3,3]이 마인드맵에서는 '맵', 브레인스토밍에서는 '인'이면 충돌!
+             * 아래와 같이 한 글자도 어긋남 없이 완벽 교차하도록 좌표를 정밀 설계함:
+           -------------------------------------------------------------------- */
+        const PUZZLE_STAGES = [
+            {
+                title: "1단계: 발명의 이해와 사고 기법",
+                rows: 10,
+                cols: 10,
+                /*
+                 [1단계 좌표 교차 검산]
+                 1) 가로 1 (r:0, c:1): 발 명  -> (0,1)=발, (0,2)=명
+                 2) 세로 1 (r:0, c:1): 발 견  -> (0,1)=발, (1,1)=견  [교차 (0,1)=발]
+                 3) 가로 3 (r:2, c:0): 스 캠 퍼  -> (2,0)=스, (2,1)=캠, (2,2)=퍼
+                 4) 세로 2 (r:0, c:4): 브 레 인 스 토 밍 -> (0,4)=브, (1,4)=레, (2,4)=인, (3,4)=스, (4,4)=토, (5,4)=밍
+                 5) 가로 4 (r:2, c:4): 인 터 넷  -> (2,4)=인, (2,5)=터, (2,6)=넷 [교차 (2,4)=인]
+                 6) 가로 5 (r:4, c:2): 마 인 드 맵 -> (4,2)=마, (4,3)=인, (4,4)=드? -> 수정:
+                    세로 2의 (4,4)='토'이므로, (4,4)를 지나려면 '토'가 들어가야 함 -> '프로토타입' (r:4, c:2 -> (4,2)=프, (4,3)=로, (4,4)=토, (4,5)=타, (4,6)=입) [교차 (4,4)=토!]
+                 7) 세로 6 (r:4, c:6): 입 체 프 린 터 -> (4,6)=입, (5,6)=체, (6,6)=프, (7,6)=린, (8,6)=터 [교차 (4,6)=입!]
+                 8) 가로 7 (r:6, c:1): 트 리 즈 -> (6,1)=트, (6,2)=리, (6,3)=즈
+                 9) 세로 8 (r:6, c:3): 즈 믄 -> 대신 (6,1) '트'와 교차하는 세로 단어 또는
+                    세로 7 (r:5, c:1): 기 술 트 리 즈? 대신:
+                    가로 7 (r:7, c:3): 마 인 드 맵 -> (7,3)=마, (7,4)=인, (7,5)=드, (7,6)=맵? ((7,6)은 린)
+                    -> 가로 7 (r:7, c:0): 마 인 드 맵 -> (7,0)=마, (7,1)=인, (7,2)=드, (7,3)=맵
+                    -> 세로 7 (r:6, c:1): 트 리 즈? (7,1)은 '인'이므로 세로 7 (r:6, c:2): 트 리 즈 -> (6,2)=트, (7,2)=리? (7,2)는 '드'.
+                    -> 세로 7 (r:7, c:0): 마 인 드 맵과 교차하는 세로 단어: (7,0)='마' -> 세로 7 (r:6, c:0): 연 마 (6,0)=연, (7,0)=마 또는
+                       세로 7 (r:7, c:3): 맵 시? 대신 역발상 배치:
+                    -> 가로 8 (r:9, c:2): 역 발 상 -> (9,2)=역, (9,3)=발, (9,4)=상
+                    -> 세로 9 (r:7, c:3): 트 리 즈 -> (7,3)=트, (8,3)=리, (9,3)=즈? ((9,3)은 발)
+                    -> 세로 9 (r:7, c:4): 발 명 가 -> (7,4)=발, (8,4)=명, (9,4)=가? ((9,4)는 상)
+                    -> 세로 9 (r:7, c:4): 역 발 상 -> (7,4)=역, (8,4)=발, (9,4)=상! [교차 (9,4)=상!]
+                    -> 가로 9 (r:7, c:4): 역 시 -> 대신 가로 9 (r:8, c:4): 발 명 품 -> (8,4)=발, (8,5)=명, (8,6)=품? ((8,6)은 터)
+                    -> 가로 9 (r:8, c:3): 개 발 터 -> 대신 가로 9 (r:8, c:4): 발 전 기 -> (8,4)=발, (8,5)=전, (8,6)=기? ((8,6)은 터)
+                    -> 세로 6을 (4,6)=입, (5,6)=체, (6,6)=모, (7,6)=형 ('입체모형')으로 하면 (8,6)이 비어있음!
+                    -> 그러면 가로 9 (r:8, c:4): 발 명 품 -> (8,4)=발, (8,5)=명, (8,6)=품! 완벽 교차!
+                    -> 트리즈 배치: 세로 10 (r:5, c:8): 트 리 즈 -> (5,8)=트, (6,8)=리, (7,8)=즈
+                    -> 가로 10 (r:6, c:6): 모 리 스? 대신 (6,6)=모 이므로 가로 10 (r:6, c:6): 모 더 니 즘? 대신
+                       세로 6을 (4,6)=입, (5,6)=체, (6,6)=프, (7,6)=린, (8,6)=터로 유지하고,
+                       트리즈를 (r:6, c:7) 세로: (6,7)=트, (7,7)=리, (8,7)=즈 -> 가로 10 (r:6, c:6): 프 로 트? 아니,
+                       가로 10 (r:7, c:6): 린 트? 아니,
+                       트리즈를 가로 (r:0, c:6): 트 리 즈 -> (0,6)=트, (0,7)=리, (0,8)=즈!
+                       세로 10 (r:0, c:8): 즈? 대신 (0,6)=트 -> 세로 10 (r:0, c:6): 트 렌 드 -> (0,6)=트, (1,6)=렌, (2,6)=드? ((2,6)은 넷)
+                       -> 가로 4를 (r:2, c:4): 인 터 뷰 -> (2,4)=인, (2,5)=터, (2,6)=뷰!
+                       -> 트리즈를 가로 (r:0, c:7): 트 리 즈 -> (0,7)=트, (0,8)=리, (0,9)=즈!
+                 */
+                words: [
+                    // 가로 단어 (5개)
+                    {
+                        number: 1,
+                        direction: "across",
+                        row: 0,
+                        col: 1,
+                        answer: "발명",
+                        clue: "지금까지 없던 새로운 물건이나 방법을 처음으로 생각해 내어 만들어 내는 것."
+                    },
+                    {
+                        number: 3,
+                        direction: "across",
+                        row: 0,
+                        col: 7,
+                        answer: "트리즈",
+                        clue: "러시아의 알트슐러가 개발한 창의적 문제 해결 이론으로, '모순'을 극복하여 해결책을 찾는 기법."
+                    },
+                    {
+                        number: 4,
+                        direction: "across",
+                        row: 2,
+                        col: 0,
+                        answer: "스캠퍼",
+                        clue: "대체하기(S), 결합하기(C), 응용하기(A) 등 7가지 질문 체크리스트를 활용해 아이디어를 떠올리는 발명 기법."
+                    },
+                    {
+                        number: 6,
+                        direction: "across",
+                        row: 4,
+                        col: 2,
+                        answer: "프로토타입",
+                        clue: "본격적인 제품 생산에 앞서 아이디어를 검증하고 문제점을 보완하기 위해 미리 만들어 보는 시제품."
+                    },
+                    {
+                        number: 8,
+                        direction: "across",
+                        row: 7,
+                        col: 0,
+                        answer: "마인드맵",
+                        clue: "중심 주제를 가운데 적고 나뭇가지가 뻗어 나가듯 연관된 생각을 그림과 키워드로 펼쳐 나가는 사고 기법."
+                    },
+                    // 세로 단어 (5개)
+                    {
+                        number: 1,
+                        direction: "down",
+                        row: 0,
+                        col: 1,
+                        answer: "발견",
+                        clue: "자연계에 이미 존재하고 있었지만 아직 사람들에게 알려지지 않은 사실이나 원리를 찾아내는 것."
+                    },
+                    {
+                        number: 2,
+                        direction: "down",
+                        row: 0,
+                        col: 4,
+                        answer: "브레인스토밍",
+                        clue: "여럿이 모여 비판 없이 자유롭게 많은 아이디어를 쏟아내어 창의적인 해결책을 찾는 집단 사고 기법."
+                    },
+                    {
+                        number: 5,
+                        direction: "down",
+                        row: 2,
+                        col: 2,
+                        answer: "퍼즐",
+                        clue: "조각을 맞추거나 문제를 풀며 창의력과 논리력을 기르는 놀이 도구. (가로 4번 '스캠퍼'의 마지막 글자와 교차)"
+                    },
+                    {
+                        number: 7,
+                        direction: "down",
+                        row: 4,
+                        col: 6,
+                        answer: "입체모형",
+                        clue: "평면 스케치만으로는 파악하기 어려운 제품의 크기, 비율, 구조를 확인하기 위해 3차원으로 제작한 모형."
+                    },
+                    {
+                        number: 9,
+                        direction: "down",
+                        row: 7,
+                        col: 8,
+                        answer: "역발상",
+                        clue: "기존의 고정관념이나 일반적인 생각의 방향을 반대로 뒤집어 새로운 아이디어를 얻는 발명 기법."
+                    }
+                ]
+            },
+            {
+                title: "2단계: 발명 과정과 지식재산권",
+                rows: 10,
+                cols: 10,
+                /*
+                 [2단계 좌표 교차 검산]
+                 1) 가로 1 (r:0, c:0): 지 식 재 산 권 -> (0,0)=지, (0,1)=식, (0,2)=재, (0,3)=산, (0,4)=권
+                 2) 세로 1 (r:0, c:0): 지 식 인 -> 대신 세로 1 (r:0, c:4): 권 리 -> 대신
+                    세로 2 (r:0, c:2): 재 활 용 -> (0,2)=재, (1,2)=활, (2,2)=용 [교차 (0,2)=재]
+                 3) 가로 3 (r:2, c:1): 실 용 신 안 -> (2,1)=실, (2,2)=용, (2,3)=신, (2,4)=안 [교차 (2,2)=용]
+                 4) 세로 4 (r:2, c:4): 안 전 모 -> 대신 세로 4 (r:2, c:3): 신 기술 -> 대신
+                    세로 4 (r:1, c:6): 특 허 권 -> (1,6)=특, (2,6)=허, (3,6)=권
+                 5) 가로 5 (r:3, c:6): 권 리 침 해 -> (3,6)=권, (3,7)=리, (3,8)=침, (3,9)=해 [교차 (3,6)=권]
+                 6) 세로 6 (r:3, c:8): 침 해 -> 대신 세로 6 (r:2, c:8): 방 침 -> 대신
+                    세로 6 (r:1, c:8): 저 작 권 -> (1,8)=저, (2,8)=작, (3,8)=권? ((3,8)은 침)
+                    -> 가로 5를 (r:3, c:5): 저 작 권 -> (3,5)=저, (3,6)=작? ((3,6)은 권)
+                    -> 가로 5를 (r:3, c:4): 상 표 권 -> (3,4)=상, (3,5)=표, (3,6)=권! [교차 (3,6)=권!]
+                 7) 세로 6 (r:3, c:4): 상 품 -> 대신 세로 6 (r:3, c:4): 상 표 -> 대신
+                    세로 6 (r:2, c:4): 안 전 -> 대신 (2,4)=안 이므로 세로 4 (r:2, c:4): 안 전 장 치 -> (2,4)=안, (3,4)=전? ((3,4)는 상)
+                    -> 가로 5를 (r:3, c:5): 상 표 권 -> (3,5)=상, (3,6)=표? ((3,6)은 권)
+                    -> 세로 4 (r:1, c:7): 특 허 권 -> (1,7)=특, (2,7)=허, (3,7)=권
+                    -> 가로 5 (r:3, c:5): 상 표 권 -> (3,5)=상, (3,6)=표, (3,7)=권! [교차 (3,7)=권!]
+                    -> 그러면 (2,4)=안 이 자유로우므로 세로 6 (r:2, c:4): 안 전 사 고 -> (2,4)=안, (3,4)=전, (4,4)=사, (5,4)=고! [교차 (2,4)=안!]
+                 8) 가로 7 (r:5, c:2): 디 자 인 권 -> (5,2)=디, (5,3)=자, (5,4)=인? ((5,4)는 고)
+                    -> 가로 7 (r:5, c:4): 고 객 -> 대신 (5,4)=고 이므로 가로 7 (r:5, c:1): 문 제 인 식? ((5,4)는 인)
+                    -> 세로 6을 (r:2, c:4): 안 전 인 증 -> (2,4)=안, (3,4)=전, (4,4)=인, (5,4)=증!
+                    -> 그러면 (4,4)=인! 가로 7 (r:4, c:2): 디 자 인 권 -> (4,2)=디, (4,3)=자, (4,4)=인, (4,5)=권! [교차 (4,4)=인!]
+                 9) 세로 8 (r:4, c:5): 권 리 -> 대신 세로 8 (r:4, c:2): 디 지 털 -> 대신
+                    가로 9 (r:7, c:1): 더 하 기 -> (7,1)=더, (7,2)=하, (7,3)=기
+                    세로 9 (r:6, c:3): 보 기 -> 대신 세로 9 (r:6, c:1): 아 이 디 어 -> (6,1)=아, (7,1)=이? ((7,1)은 더)
+                    -> 가로 9 (r:7, c:0): 아 이 디 어 -> (7,0)=아, (7,1)=이, (7,2)=디, (7,3)=어
+                    -> 세로 8 (r:4, c:2): 디 자 인 권 과 교차하려면 (4,2)=디 -> 세로 8 (r:4, c:2): 디 지 털 -> (4,2)=디, (5,2)=지, (6,2)=털
+                    -> 가로 10 (r:8, c:5): 저 작 권 -> (8,5)=저, (8,6)=작, (8,7)=권
+                    -> 세로 10 (r:7, c:7): 방 권 -> 대신 세로 10 (r:6, c:7): 초 상 권 -> (6,7)=초, (7,7)=상, (8,7)=권! [교차 (8,7)=권!]
+                 */
+                words: [
+                    // 가로 단어 (5개)
+                    {
+                        number: 1,
+                        direction: "across",
+                        row: 0,
+                        col: 0,
+                        answer: "지식재산권",
+                        clue: "인간의 창의적 활동으로 만들어 낸 발명, 디자인, 저작물 등에 대하여 법이 부여하는 독점적 권리."
+                    },
+                    {
+                        number: 3,
+                        direction: "across",
+                        row: 2,
+                        col: 1,
+                        answer: "실용신안",
+                        clue: "이미 발명된 물품의 모양이나 구조를 개선하여 더 편리하게 만든 '작은 발명(고안)'을 보호하는 제도."
+                    },
+                    {
+                        number: 5,
+                        direction: "across",
+                        row: 3,
+                        col: 5,
+                        answer: "상표권",
+                        clue: "자신의 상품을 다른 회사의 상품과 구별하기 위해 사용하는 기호·문자·도형(로고)을 독점적으로 사용할 수 있는 권리."
+                    },
+                    {
+                        number: 7,
+                        direction: "across",
+                        row: 4,
+                        col: 2,
+                        answer: "디자인권",
+                        clue: "물품의 외관(형상, 모양, 색채 등)을 아름답고 독창적으로 꾸민 창작물을 보호하는 지식재산권."
+                    },
+                    {
+                        number: 9,
+                        direction: "across",
+                        row: 7,
+                        col: 0,
+                        answer: "아이디어",
+                        clue: "불편한 점을 개선하거나 새로운 발명품을 만들기 위해 머릿속에서 떠올린 창의적인 생각."
+                    },
+                    // 세로 단어 (5개)
+                    {
+                        number: 2,
+                        direction: "down",
+                        row: 0,
+                        col: 2,
+                        answer: "재활용",
+                        clue: "버려지는 자원을 다시 가공하여 새로운 제품의 원료나 발명 재료로 활용하는 친환경 활동."
+                    },
+                    {
+                        number: 4,
+                        direction: "down",
+                        row: 1,
+                        col: 7,
+                        answer: "특허권",
+                        clue: "자연법칙을 이용한 고도의 기술적 창작(발명)을 출원·등록하여 일정 기간(20년) 독점할 수 있는 권리."
+                    },
+                    {
+                        number: 6,
+                        direction: "down",
+                        row: 2,
+                        col: 4,
+                        answer: "안전인증",
+                        clue: "발명품이나 공산품이 소비자가 사용하기에 위험하지 않고 기준에 적합함을 공인 기관이 검사해 증명하는 절차."
+                    },
+                    {
+                        number: 8,
+                        direction: "down",
+                        row: 6,
+                        col: 7,
+                        answer: "초상권",
+                        clue: "자신의 얼굴이나 신체적 특징을 함부로 촬영당하거나 상업적으로 이용당하지 않을 권리."
+                    },
+                    {
+                        number: 10,
+                        direction: "down",
+                        row: 8,
+                        col: 5,
+                        answer: "저작권",
+                        clue: "소설, 음악, 미술, 컴퓨터 프로그램 등 문학·예술적 창작물을 만든 사람이 가지는 권리. (가로 배치용 -> 아래 세로 10번 '저작물'로 교차)"
+                    }
+                ]
+            }
+        ];
+
+        // 2단계 10번 단어 좌표 보정: 가로 10번(r:8, c:5 '저작권')과 세로 8번(r:6, c:7 '초상권')이 (8,7)='권'에서 완벽 교차하도록 설정
+        PUZZLE_STAGES[1].words[9] = {
+            number: 10,
+            direction: "across",
+            row: 8,
+            col: 5,
+            answer: "저작권",
+            clue: "소설, 음악, 그림, 소프트웨어 등 문학·예술적 창작물을 만든 사람이 가지는 권리."
+        };
+        // 2단계 세로 단어 1개 추가 보완 (r:4, c:2 '디지털' -> (4,2)='디'에서 디자인권과 교차)
+        PUZZLE_STAGES[1].words.push({
+            number: 11,
+            direction: "down",
+            row: 4,
+            col: 2,
+            answer: "디지털",
+            clue: "정보를 0과 1의 이진수 신호로 처리하는 방식으로, 현대 스마트 발명품의 핵심 기술."
+        });
+
+        /* --------------------------------------------------------------------
+           2. 한글 초성 추출 유틸리티
+           -------------------------------------------------------------------- */
+        const CHOSUNG_LIST = [
+            "ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ",
+            "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"
+        ];
+
+        function getChosung(str) {
+            let result = "";
+            for (let i = 0; i < str.length; i++) {
+                const code = str.charCodeAt(i) - 0xAC00;
+                if (code >= 0 && code <= 11171) {
+                    const chosungIdx = Math.floor(code / 588);
+                    result += CHOSUNG_LIST[chosungIdx];
+                } else {
+                    result += str[i];
+                }
+            }
+            return result;
+        }
+
+        /* --------------------------------------------------------------------
+           3. 애플리케이션 상태 변수
+           -------------------------------------------------------------------- */
+        let currentStageIndex = 0;
+        let gridData = [];          // 2D 배열: 각 칸의 정답 글자, 번호, 소속 단어 목록, 입력값
+        let selectedRow = 0;
+        let selectedCol = 0;
+        let currentDirection = "across"; // "across" | "down"
+        let showChosung = false;
+        let hintUsedCount = 0;
+        let isComposing = false;
+        let isCompleted = false;
+
+        // 타이머 상태
+        let elapsedSeconds = 0;
+        let timerInterval = null;
+
+        // 사운드 상태
+        let soundEnabled = true;
+        let audioCtx = null;
+
+        /* --------------------------------------------------------------------
+           4. Web Audio API 효과음 엔진 (외부 파일 불필요)
+           -------------------------------------------------------------------- */
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                if (!audioCtx) audioCtx = new AudioCtx();
+                if (audioCtx.state === "suspended") audioCtx.resume();
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                const now = audioCtx.currentTime;
+
+                if (type === "type") {
+                    osc.type = "sine";
+                    osc.frequency.setValueAtTime(620, now);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                } else if (type === "hint") {
+                    osc.type = "triangle";
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(783.99, now + 0.08);
+                    gain.gain.setValueAtTime(0.16, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                } else if (type === "check-good") {
+                    osc.type = "sine";
+                    osc.frequency.setValueAtTime(587.33, now);
+                    osc.frequency.setValueAtTime(880, now + 0.1);
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === "check-bad") {
+                    osc.type = "sawtooth";
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.linearRampToValueAtTime(160, now + 0.22);
+                    gain.gain.setValueAtTime(0.14, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+                    osc.start(now);
+                    osc.stop(now + 0.24);
+                } else if (type === "victory") {
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, idx) => {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.connect(g);
+                        g.connect(audioCtx.destination);
+                        o.type = "triangle";
+                        o.frequency.setValueAtTime(freq, now + idx * 0.1);
+                        g.gain.setValueAtTime(0.2, now + idx * 0.1);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.35);
+                        o.start(now + idx * 0.1);
+                        o.stop(now + idx * 0.1 + 0.35);
+                    });
+                }
+            } catch (e) {
+                // 오디오 미지원 환경 무시
+            }
+        }
+
+        /* --------------------------------------------------------------------
+           5. 퍼즐 데이터 모델 구축 및 렌더링
+           -------------------------------------------------------------------- */
+        function buildGridModel(stageIndex) {
+            const stage = PUZZLE_STAGES[stageIndex];
+            const model = [];
+
+            for (let r = 0; r < stage.rows; r++) {
+                const rowArr = [];
+                for (let c = 0; c < stage.cols; c++) {
+                    rowArr.push({
+                        row: r,
+                        col: c,
+                        isBlocked: true,
+                        solution: "",
+                        userChar: "",
+                        number: null,
+                        words: [], // { wordObj, indexInWord }
+                        checkState: "none" // "none" | "correct" | "wrong"
+                    });
+                }
+                model.push(rowArr);
+            }
+
+            stage.words.forEach(w => {
+                for (let i = 0; i < w.answer.length; i++) {
+                    const r = w.direction === "across" ? w.row : w.row + i;
+                    const c = w.direction === "across" ? w.col + i : w.col;
+                    const cell = model[r][c];
+                    cell.isBlocked = false;
+                    cell.solution = w.answer[i];
+                    if (i === 0) {
+                        cell.number = w.number;
+                    }
+                    cell.words.push({ word: w, index: i });
+                }
+            });
+
+            return model;
+        }
+
+        function renderGrid() {
+            const stage = PUZZLE_STAGES[currentStageIndex];
+            const gridEl = document.getElementById("crossword-grid");
+            gridEl.innerHTML = "";
+            gridEl.style.gridTemplateColumns = `repeat(${stage.cols}, 1fr)`;
+
+            for (let r = 0; r < stage.rows; r++) {
+                for (let c = 0; c < stage.cols; c++) {
+                    const cellData = gridData[r][c];
+                    const cellDiv = document.createElement("div");
+                    cellDiv.className = "cw-cell " + (cellData.isBlocked ? "blocked" : "active-cell");
+                    cellDiv.dataset.row = r;
+                    cellDiv.dataset.col = c;
+
+                    if (!cellData.isBlocked) {
+                        if (cellData.number !== null) {
+                            const numSpan = document.createElement("span");
+                            numSpan.className = "cell-num";
+                            numSpan.textContent = cellData.number;
+                            cellDiv.appendChild(numSpan);
+                        }
+
+                        const inputEl = document.createElement("input");
+                        inputEl.type = "text";
+                        inputEl.className = "cell-input";
+                        inputEl.maxLength = 2;
+                        inputEl.value = cellData.userChar;
+                        inputEl.setAttribute("aria-label", `${r + 1}행 ${c + 1}열 입력칸`);
+                        inputEl.dataset.row = r;
+                        inputEl.dataset.col = c;
+
+                        // 클릭 시 셀 선택 및 방향 전환
+                        cellDiv.addEventListener("mousedown", function (e) {
+                            e.preventDefault();
+                            handleCellClick(r, c);
+                        });
+
+                        // 한글 조합 시작/종료 감지
+                        inputEl.addEventListener("compositionstart", function () {
+                            isComposing = true;
+                        });
+
+                        inputEl.addEventListener("compositionend", function (e) {
+                            isComposing = false;
+                            const val = e.data || inputEl.value;
+                            if (val && val.length > 0) {
+                                const lastChar = val.charAt(val.length - 1);
+                                applyCharacterToCell(r, c, lastChar, true);
+                            }
+                        });
+
+                        // 일반 입력 처리
+                        inputEl.addEventListener("input", function () {
+                            if (isComposing) return;
+                            const raw = inputEl.value.trim();
+                            if (!raw) {
+                                cellData.userChar = "";
+                                cellData.checkState = "none";
+                                updateProgress();
+                                return;
+                            }
+                            const lastChar = raw.charAt(raw.length - 1);
+                            applyCharacterToCell(r, c, lastChar, true);
+                        });
+
+                        // 키보드 화살표 및 Backspace 내비게이션
+                        inputEl.addEventListener("keydown", function (e) {
+                            handleKeyDown(e, r, c);
+                        });
+
+                        cellDiv.appendChild(inputEl);
+                    }
+
+                    gridEl.appendChild(cellDiv);
+                }
+            }
+        }
+
+        function renderClueLists() {
+            const stage = PUZZLE_STAGES[currentStageIndex];
+            const acrossListEl = document.getElementById("across-clue-list");
+            const downListEl = document.getElementById("down-clue-list");
+            acrossListEl.innerHTML = "";
+            downListEl.innerHTML = "";
+
+            const acrossWords = stage.words.filter(w => w.direction === "across").sort((a, b) => a.number - b.number);
+            const downWords = stage.words.filter(w => w.direction === "down").sort((a, b) => a.number - b.number);
+
+            document.getElementById("across-count").textContent = `총 ${acrossWords.length}문제`;
+            document.getElementById("down-count").textContent = `총 ${downWords.length}문제`;
+
+            const createClueItem = (w) => {
+                const item = document.createElement("div");
+                item.className = "clue-item";
+                item.dataset.dir = w.direction;
+                item.dataset.num = w.number;
+
+                const mainDiv = document.createElement("div");
+                mainDiv.className = "clue-main";
+                mainDiv.innerHTML = `<span class="clue-num">${w.number}.</span> ${w.clue}`;
+
+                const metaDiv = document.createElement("div");
+                metaDiv.className = "clue-meta";
+
+                const lenSpan = document.createElement("span");
+                lenSpan.className = "len-tag";
+                lenSpan.textContent = `${w.answer.length}글자`;
+                metaDiv.appendChild(lenSpan);
+
+                if (showChosung) {
+                    const choSpan = document.createElement("span");
+                    choSpan.className = "chosung-tag";
+                    choSpan.textContent = getChosung(w.answer);
+                    metaDiv.appendChild(choSpan);
+                }
+
+                if (isWordSolved(w)) {
+                    item.classList.add("solved");
+                    const okSpan = document.createElement("span");
+                    okSpan.className = "solved-check";
+                    okSpan.textContent = "✔ 완성";
+                    metaDiv.appendChild(okSpan);
+                }
+
+                item.appendChild(mainDiv);
+                item.appendChild(metaDiv);
+
+                item.addEventListener("click", function () {
+                    currentDirection = w.direction;
+                    selectedRow = w.row;
+                    selectedCol = w.col;
+                    updateSelectionUI(true);
+                });
+
+                return item;
+            };
+
+            acrossWords.forEach(w => acrossListEl.appendChild(createClueItem(w)));
+            downWords.forEach(w => downListEl.appendChild(createClueItem(w)));
+        }
+
+        function renderSyllablePad() {
+            const stage = PUZZLE_STAGES[currentStageIndex];
+            const padEl = document.getElementById("syllable-pad");
+            padEl.innerHTML = "";
+
+            // 현재 스테이지 정답 글자들을 중복 제거 후 가나다순 정렬하여 전자칠판용 버튼 제공
+            const charSet = new Set();
+            stage.words.forEach(w => {
+                for (const ch of w.answer) {
+                    charSet.add(ch);
+                }
+            });
+
+            const sortedChars = Array.from(charSet).sort((a, b) => a.localeCompare(b, "ko"));
+
+            sortedChars.forEach(ch => {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "syl-btn";
+                btn.textContent = ch;
+                btn.addEventListener("click", function () {
+                    applyCharacterToCell(selectedRow, selectedCol, ch, true);
+                });
+                padEl.appendChild(btn);
+            });
+
+            // 지우기 버튼 추가
+            const eraseBtn = document.createElement("button");
+            eraseBtn.type = "button";
+            eraseBtn.className = "syl-btn erase-btn";
+            eraseBtn.textContent = "⌫ 지우기";
+            eraseBtn.addEventListener("click", function () {
+                const cell = gridData[selectedRow][selectedCol];
+                if (!cell || cell.isBlocked) return;
+                if (cell.userChar !== "") {
+                    cell.userChar = "";
+                    cell.checkState = "none";
+                    syncCellDOM(selectedRow, selectedCol);
+                    updateProgress();
+                } else {
+                    moveCursor(-1);
+                }
+            });
+            padEl.appendChild(eraseBtn);
+        }
+
+        /* --------------------------------------------------------------------
+           6. 선택, 포커스, 한글 입력 및 커서 이동 로직
+           -------------------------------------------------------------------- */
+        function getActiveWord() {
+            const cell = gridData[selectedRow]?.[selectedCol];
+            if (!cell || cell.isBlocked) return null;
+
+            const match = cell.words.find(item => item.word.direction === currentDirection);
+            if (match) return match.word;
+
+            // 현재 방향의 단어가 없으면 다른 방향 단어로 자동 전환
+            if (cell.words.length > 0) {
+                currentDirection = cell.words[0].word.direction;
+                return cell.words[0].word;
+            }
+            return null;
+        }
+
+        function handleCellClick(r, c) {
+            const cell = gridData[r][c];
+            if (!cell || cell.isBlocked) return;
+
+            if (selectedRow === r && selectedCol === c) {
+                // 같은 칸을 다시 클릭하면 가로 <-> 세로 방향 전환 (교차 칸일 때)
+                if (cell.words.length > 1) {
+                    currentDirection = (currentDirection === "across") ? "down" : "across";
+                }
+            } else {
+                selectedRow = r;
+                selectedCol = c;
+                const hasCurrentDir = cell.words.some(w => w.word.direction === currentDirection);
+                if (!hasCurrentDir && cell.words.length > 0) {
+                    currentDirection = cell.words[0].word.direction;
+                }
+            }
+
+            updateSelectionUI(true);
+        }
+
+        function applyCharacterToCell(r, c, char, autoAdvance) {
+            const cell = gridData[r]?.[c];
+            if (!cell || cell.isBlocked) return;
+
+            // 한글 한 음절만 깔끔하게 반영
+            const cleanChar = char.trim().charAt(0);
+            if (!cleanChar) return;
+
+            cell.userChar = cleanChar;
+            cell.checkState = "none";
+            syncCellDOM(r, c);
+            playSound("type");
+
+            updateProgress();
+            renderClueLists();
+            updateSelectionUI(false);
+
+            if (autoAdvance) {
+                moveCursor(1);
+            }
+
+            checkIfAllSolvedAutomatically();
+        }
+
+        function moveCursor(step) {
+            const activeWord = getActiveWord();
+            if (!activeWord) return;
+
+            const currentIdx = activeWord.direction === "across"
+                ? (selectedCol - activeWord.col)
+                : (selectedRow - activeWord.row);
+
+            const nextIdx = currentIdx + step;
+            if (nextIdx >= 0 && nextIdx < activeWord.answer.length) {
+                selectedRow = activeWord.direction === "across" ? activeWord.row : activeWord.row + nextIdx;
+                selectedCol = activeWord.direction === "across" ? activeWord.col + nextIdx : activeWord.col;
+                updateSelectionUI(true);
+            } else {
+                updateSelectionUI(true);
+            }
+        }
+
+        function handleKeyDown(e, r, c) {
+            if (isComposing) return;
+
+            if (e.key === "ArrowRight") {
+                e.preventDefault();
+                currentDirection = "across";
+                if (c + 1 < PUZZLE_STAGES[currentStageIndex].cols && !gridData[r][c + 1].isBlocked) {
+                    selectedCol = c + 1;
+                }
+                updateSelectionUI(true);
+            } else if (e.key === "ArrowLeft") {
+                e.preventDefault();
+                currentDirection = "across";
+                if (c - 1 >= 0 && !gridData[r][c - 1].isBlocked) {
+                    selectedCol = c - 1;
+                }
+                updateSelectionUI(true);
+            } else if (e.key === "ArrowDown") {
+                e.preventDefault();
+                currentDirection = "down";
+                if (r + 1 < PUZZLE_STAGES[currentStageIndex].rows && !gridData[r + 1][c].isBlocked) {
+                    selectedRow = r + 1;
+                }
+                updateSelectionUI(true);
+            } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                currentDirection = "down";
+                if (r - 1 >= 0 && !gridData[r - 1][c].isBlocked) {
+                    selectedRow = r - 1;
+                }
+                updateSelectionUI(true);
+            } else if (e.key === "Backspace") {
+                e.preventDefault();
+                const cell = gridData[r][c];
+                if (cell.userChar !== "") {
+                    cell.userChar = "";
+                    cell.checkState = "none";
+                    syncCellDOM(r, c);
+                    updateProgress();
+                    renderClueLists();
+                    updateSelectionUI(true);
+                } else {
+                    moveCursor(-1);
+                    const prevCell = gridData[selectedRow][selectedCol];
+                    if (prevCell) {
+                        prevCell.userChar = "";
+                        prevCell.checkState = "none";
+                        syncCellDOM(selectedRow, selectedCol);
+                        updateProgress();
+                        renderClueLists();
+                        updateSelectionUI(true);
+                    }
+                }
+            } else if (e.key === "Tab" || e.key === "Enter") {
+                e.preventDefault();
+                selectNextWord();
+            }
+        }
+
+        function selectNextWord() {
+            const stage = PUZZLE_STAGES[currentStageIndex];
+            const activeWord = getActiveWord();
+            let idx = stage.words.findIndex(w => w === activeWord);
+            idx = (idx + 1) % stage.words.length;
+            const nextW = stage.words[idx];
+            currentDirection = nextW.direction;
+            selectedRow = nextW.row;
+            selectedCol = nextW.col;
+            updateSelectionUI(true);
+        }
+
+        function syncCellDOM(r, c) {
+            const cellData = gridData[r][c];
+            const cellDiv = document.querySelector(`.cw-cell[data-row="${r}"][data-col="${c}"]`);
+            if (!cellDiv) return;
+
+            cellDiv.classList.remove("checked-correct", "checked-wrong");
+            if (cellData.checkState === "correct") cellDiv.classList.add("checked-correct");
+            if (cellData.checkState === "wrong") cellDiv.classList.add("checked-wrong");
+
+            const inputEl = cellDiv.querySelector("input");
+            if (inputEl && inputEl.value !== cellData.userChar) {
+                inputEl.value = cellData.userChar;
+            }
+        }
+
+        function updateSelectionUI(shouldFocusInput) {
+            const activeWord = getActiveWord();
+
+            // 모든 칸 하이라이트 초기화 후 재적용
+            document.querySelectorAll(".cw-cell.active-cell").forEach(el => {
+                el.classList.remove("in-word", "focused");
+            });
+
+            if (activeWord) {
+                for (let i = 0; i < activeWord.answer.length; i++) {
+                    const wr = activeWord.direction === "across" ? activeWord.row : activeWord.row + i;
+                    const wc = activeWord.direction === "across" ? activeWord.col + i : activeWord.col;
+                    const wEl = document.querySelector(`.cw-cell[data-row="${wr}"][data-col="${wc}"]`);
+                    if (wEl) wEl.classList.add("in-word");
+                }
+
+                // 상단 문제 배너 업데이트
+                const dirLabel = activeWord.direction === "across" ? "가로" : "세로";
+                document.getElementById("active-dir-pill").textContent = `${dirLabel} ${activeWord.number}번`;
+                document.getElementById("active-word-len").textContent = `(${activeWord.answer.length}글자)`;
+                document.getElementById("active-clue-desc").textContent = activeWord.clue;
+
+                const chosungBox = document.getElementById("active-chosung-box");
+                if (showChosung) {
+                    chosungBox.textContent = `초성 힌트: ${getChosung(activeWord.answer)}`;
+                    chosungBox.classList.remove("hidden");
+                } else {
+                    chosungBox.classList.add("hidden");
+                }
+            }
+
+            const focusedEl = document.querySelector(`.cw-cell[data-row="${selectedRow}"][data-col="${selectedCol}"]`);
+            if (focusedEl) {
+                focusedEl.classList.add("focused");
+                if (shouldFocusInput) {
+                    const inp = focusedEl.querySelector("input");
+                    if (inp) inp.focus({ preventScroll: true });
+                }
+            }
+
+            // 우측 열쇠 리스트 활성 표시
+            document.querySelectorAll(".clue-item").forEach(item => {
+                const isMatch = activeWord &&
+                    item.dataset.dir === activeWord.direction &&
+                    Number(item.dataset.num) === activeWord.number;
+                item.classList.toggle("active", Boolean(isMatch));
+            });
+        }
+
+        /* --------------------------------------------------------------------
+           7. 채점, 힌트, 정답 공개, 타이머 및 완성 판정
+           -------------------------------------------------------------------- */
+        function isWordSolved(word) {
+            for (let i = 0; i < word.answer.length; i++) {
+                const r = word.direction === "across" ? word.row : word.row + i;
+                const c = word.direction === "across" ? word.col + i : word.col;
+                if (gridData[r][c].userChar !== word.answer[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function updateProgress() {
+            let totalCells = 0;
+            let filledCells = 0;
+
+            for (let r = 0; r < gridData.length; r++) {
+                for (let c = 0; c < gridData[r].length; c++) {
+                    if (!gridData[r][c].isBlocked) {
+                        totalCells++;
+                        if (gridData[r][c].userChar !== "") {
+                            filledCells++;
+                        }
+                    }
+                }
+            }
+
+            const pct = totalCells > 0 ? Math.round((filledCells / totalCells) * 100) : 0;
+            document.getElementById("progress-display").textContent = `${pct}%`;
+        }
+
+        function checkAllAnswers() {
+            let totalCells = 0;
+            let correctCells = 0;
+            let wrongCells = 0;
+
+            for (let r = 0; r < gridData.length; r++) {
+                for (let c = 0; c < gridData[r].length; c++) {
+                    const cell = gridData[r][c];
+                    if (cell.isBlocked) continue;
+                    totalCells++;
+
+                    if (cell.userChar === "") {
+                        cell.checkState = "none";
+                    } else if (cell.userChar === cell.solution) {
+                        cell.checkState = "correct";
+                        correctCells++;
+                    } else {
+                        cell.checkState = "wrong";
+                        wrongCells++;
+                    }
+                    syncCellDOM(r, c);
+                }
+            }
+
+            if (correctCells === totalCells) {
+                triggerVictory();
+            } else if (wrongCells > 0) {
+                playSound("check-bad");
+                showToast(`채점 결과: ${correctCells}칸 정답, ${wrongCells}칸 오답(빨간색)이 있습니다!`);
+            } else {
+                playSound("check-good");
+                showToast(`입력한 ${correctCells}칸 모두 정답입니다! 나머지 칸도 채워보세요.`);
+            }
+        }
+
+        function checkIfAllSolvedAutomatically() {
+            if (isCompleted) return;
+            for (let r = 0; r < gridData.length; r++) {
+                for (let c = 0; c < gridData[r].length; c++) {
+                    const cell = gridData[r][c];
+                    if (!cell.isBlocked && cell.userChar !== cell.solution) {
+                        return;
+                    }
+                }
+            }
+            // 모든 칸이 정답과 일치하면 자동 채점 후 축하 모달 오픈
+            for (let r = 0; r < gridData.length; r++) {
+                for (let c = 0; c < gridData[r].length; c++) {
+                    if (!gridData[r][c].isBlocked) {
+                        gridData[r][c].checkState = "correct";
+                        syncCellDOM(r, c);
+                    }
+                }
+            }
+            triggerVictory();
+        }
+
+        function revealSingleLetterHint() {
+            const cell = gridData[selectedRow]?.[selectedCol];
+            if (!cell || cell.isBlocked) return;
+
+            if (cell.userChar === cell.solution) {
+                showToast("이미 정답이 입력된 칸입니다!");
+                return;
+            }
+
+            hintUsedCount++;
+            document.getElementById("hint-count-display").textContent = `${hintUsedCount}회`;
+
+            cell.userChar = cell.solution;
+            cell.checkState = "correct";
+            syncCellDOM(selectedRow, selectedCol);
+            playSound("hint");
+
+            updateProgress();
+            renderClueLists();
+            moveCursor(1);
+            showToast(`선택한 칸의 정답 '${cell.solution}' 글자가 공개되었습니다!`);
+            checkIfAllSolvedAutomatically();
+        }
+
+        function revealAllAnswers() {
+            for (let r = 0; r < gridData.length; r++) {
+                for (let c = 0; c < gridData[r].length; c++) {
+                    const cell = gridData[r][c];
+                    if (!cell.isBlocked) {
+                        cell.userChar = cell.solution;
+                        cell.checkState = "correct";
+                        syncCellDOM(r, c);
+                    }
+                }
+            }
+            isCompleted = true;
+            stopTimer();
+            updateProgress();
+            renderClueLists();
+            playSound("hint");
+            showToast("모든 가로세로 낱말의 정답이 공개되었습니다.");
+        }
+
+        function triggerVictory() {
+            if (isCompleted) return;
+            isCompleted = true;
+            stopTimer();
+            playSound("victory");
+
+            const stage = PUZZLE_STAGES[currentStageIndex];
+            const finalScore = Math.max(50, 100 - hintUsedCount * 5);
+
+            document.getElementById("victory-stage-name").textContent = `${stage.title}을(를) 모두 완성했습니다!`;
+            document.getElementById("final-time-val").textContent = formatSeconds(elapsedSeconds);
+            document.getElementById("final-hint-val").textContent = `${hintUsedCount}회`;
+            document.getElementById("final-score-val").textContent = `${finalScore}점`;
+
+            document.getElementById("victory-modal").classList.remove("hidden");
+            launchConfetti();
+        }
+
+        /* --------------------------------------------------------------------
+           8. 타이머 및 축하 폭죽 애니메이션
+           -------------------------------------------------------------------- */
+        function formatSeconds(sec) {
+            const m = String(Math.floor(sec / 60)).padStart(2, "0");
+            const s = String(sec % 60).padStart(2, "0");
+            return `${m}:${s}`;
+        }
+
+        function startTimer() {
+            stopTimer();
+            elapsedSeconds = 0;
+            document.getElementById("timer-display").textContent = "00:00";
+            timerInterval = window.setInterval(() => {
+                elapsedSeconds++;
+                document.getElementById("timer-display").textContent = formatSeconds(elapsedSeconds);
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval !== null) {
+                window.clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function launchConfetti() {
+            const canvas = document.getElementById("confetti-canvas");
+            const ctx = canvas.getContext("2d");
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const colors = ["#2563eb", "#16a34a", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
+            const particles = [];
+
+            for (let i = 0; i < 110; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    w: Math.random() * 10 + 6,
+                    h: Math.random() * 6 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speedY: Math.random() * 3.5 + 2.2,
+                    speedX: (Math.random() - 0.5) * 2.5,
+                    angle: Math.random() * 360,
+                    spin: (Math.random() - 0.5) * 8
+                });
+            }
+
+            let frames = 0;
+            function animateConfetti() {
+                frames++;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                particles.forEach(p => {
+                    p.y += p.speedY;
+                    p.x += p.speedX;
+                    p.angle += p.spin;
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.angle * Math.PI) / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                    ctx.restore();
+                });
+
+                if (frames < 170) {
+                    window.requestAnimationFrame(animateConfetti);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+            window.requestAnimationFrame(animateConfetti);
+        }
+
+        /* --------------------------------------------------------------------
+           9. 스테이지 로드 및 전체 초기화
+           -------------------------------------------------------------------- */
+        function loadStage(stageIndex) {
+            currentStageIndex = stageIndex;
+            isCompleted = false;
+            hintUsedCount = 0;
+            document.getElementById("hint-count-display").textContent = "0회";
+
+            gridData = buildGridModel(stageIndex);
+
+            // 첫 번째 가로 단어의 시작 좌표를 기본 포커스로 지정
+            const firstWord = PUZZLE_STAGES[stageIndex].words[0];
+            selectedRow = firstWord.row;
+            selectedCol = firstWord.col;
+            currentDirection = firstWord.direction;
+
+            renderGrid();
+            renderClueLists();
+            renderSyllablePad();
+            updateProgress();
+            updateSelectionUI(false);
+            startTimer();
+        }
+
+        let toastTimer = null;
+        function showToast(msg) {
+            const el = document.getElementById("toast-msg");
+            el.textContent = msg;
+            el.classList.remove("hidden");
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                el.classList.add("hidden");
+            }, 2500);
+        }
+
+        function initApp() {
+            // 스테이지 선택 변경
+            document.getElementById("stage-select").addEventListener("change", function () {
+                const idx = parseInt(this.value, 10);
+                loadStage(idx);
+                showToast(`${PUZZLE_STAGES[idx].title} 퍼즐이 로드되었습니다.`);
+            });
+
+            // 효과음 토글
+            document.getElementById("sound-btn").addEventListener("click", function () {
+                soundEnabled = !soundEnabled;
+                this.textContent = soundEnabled ? "🔊" : "🔇";
+                showToast(soundEnabled ? "효과음이 켜졌습니다." : "효과음이 음소거되었습니다.");
+            });
+
+            // 채점하기
+            document.getElementById("check-answers-btn").addEventListener("click", checkAllAnswers);
+
+            // 초성 힌트 토글
+            document.getElementById("toggle-chosung-btn").addEventListener("click", function () {
+                showChosung = !showChosung;
+                document.getElementById("chosung-status").textContent = showChosung ? "ON" : "OFF";
+                this.classList.toggle("active", showChosung);
+
+                if (showChosung) {
+                    hintUsedCount++;
+                    document.getElementById("hint-count-display").textContent = `${hintUsedCount}회`;
+                    playSound("hint");
+                    showToast("초성 힌트가 활성화되었습니다!");
+                }
+                renderClueLists();
+                updateSelectionUI(false);
+            });
+
+            // 한 글자 힌트 공개
+            document.getElementById("reveal-letter-btn").addEventListener("click", revealSingleLetterHint);
+
+            // 정답 전체 공개
+            document.getElementById("reveal-all-btn").addEventListener("click", revealAllAnswers);
+
+            // 다시 풀기
+            document.getElementById("reset-puzzle-btn").addEventListener("click", function () {
+                loadStage(currentStageIndex);
+                showToast("퍼즐판이 초기화되었습니다.");
+            });
+
+            // 전자칠판 터치 패드 접기/펼치기
+            document.getElementById("toggle-pad-btn").addEventListener("click", function () {
+                const padEl = document.getElementById("syllable-pad");
+                const isHidden = padEl.classList.toggle("hidden");
+                this.textContent = isHidden ? "패드 펼치기 ▼" : "패드 접기 ▲";
+            });
+
+            // 축하 모달 버튼들
+            document.getElementById("close-victory-btn").addEventListener("click", function () {
+                document.getElementById("victory-modal").classList.add("hidden");
+            });
+
+            document.getElementById("next-stage-btn").addEventListener("click", function () {
+                document.getElementById("victory-modal").classList.add("hidden");
+                const nextIdx = (currentStageIndex + 1) % PUZZLE_STAGES.length;
+                document.getElementById("stage-select").value = String(nextIdx);
+                loadStage(nextIdx);
+                showToast(`${PUZZLE_STAGES[nextIdx].title} 시작!`);
+            });
+
+            // 초기 1단계 실행
+            loadStage(0);
+        }
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initApp);
+        } else {
+            initApp();
+        }
+    })();
+    </script>
+</body>
+</html>
